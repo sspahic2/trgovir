@@ -1,0 +1,13 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL_NON_POOLING")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model AllowedEmail {
+  email         String @id
+  isSuperAdmin  Boolean @map("is_super_admin")
+}
