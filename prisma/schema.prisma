@@ -11,3 +11,14 @@ model AllowedEmail {
   email         String @id
   isSuperAdmin  Boolean @map("is_super_admin")
 }
+
+model TableRow {
+  id          Int     @id @default(autoincrement())
+  oblikIMere  String
+  diameter    Float?
+  lg          Float?
+  n           Int?
+  lgn         Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
