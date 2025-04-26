@@ -17,11 +17,13 @@
 :root.light {
   --background: #ffffff;
   --foreground: #171717;
+  --card-bg: #ffffff;
 }
 
 :root.dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+  --card-bg: #1c1c1c;
 }
 
 @layer utilities {

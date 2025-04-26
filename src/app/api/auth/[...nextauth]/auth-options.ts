@@ -17,5 +17,16 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user }) {
       return await isEmailAllowed(user?.email);
     },
+    async session({ session }) {
+      const email = session.user?.email || "";
+      const isAdmin = await isEmailAllowed(email);
+      session.user.isSuperAdmin = isAdmin;
+      return session;
+    },
+    async jwt({ token }) {
+      const email = token?.email;
+      token.isSuperAdmin = await isEmailAllowed(email);
+      return token;
+    },
   },
 };

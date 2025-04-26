@@ -7,13 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
+    "@vercel/python": "^4.7.2",
     "lucide-react": "^0.487.0",
     "next": "15.2.4",
     "next-auth": "^4.24.11",
+    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^5.1.91",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -24,6 +28,7 @@
     "@types/react-dom": "^19",
     "prisma": "^6.5.0",
     "tailwindcss": "^4",
+    "tsx": "^4.19.3",
     "typescript": "^5"
   }
 }

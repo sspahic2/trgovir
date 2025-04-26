@@ -5,4 +5,5 @@ export interface TableRow {
   lg: number | null;
   n: number | null;
   lgn: number | null;
+  tableId: number;
 }

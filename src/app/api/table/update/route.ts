@@ -6,8 +6,9 @@ import { TableRepository } from "@/repositories/table.repository";
 export async function PUT(req: Request) {
   try {
     await requireSuperAdmin();
-    const { id, ...updates } = await req.json();
-    const result = await TableRepository.update(id, updates);
+    const { id, name, rows } = await req.json();
+
+    const result = await TableRepository.updateWithRows(id, name, rows);
     return NextResponse.json({ result });
   } catch (err) {
     console.error("Update failed", err);

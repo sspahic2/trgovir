@@ -1,24 +1,38 @@
-import type { TableRow } from "@/models/TableRow";
-import { get, post, remove, put } from "./base.service";
+// src/services/table.service.ts
+import { Table } from "@/models/Table";
+import { get, post, put } from "./base.service";
+import { TableRow } from "@/models/TableRow";
+
+type TableWithRows = Table & { rows: TableRow[] };
 
 export const TableService = {
-  async getAll(): Promise<TableRow[]> {
-    return get("/api/table/all");
+  async createTableWithRows(
+    name: string,
+    rows: Omit<TableRow, "id" | "tableId" | "createdAt" | "updatedAt">[]
+  ): Promise<TableWithRows> {
+    return post<TableWithRows>("/api/table/create", { name, rows });
   },
 
-  async getById(id: number): Promise<TableRow> {
-    return post("/api/table/get", { id });
+  async getTableWithRows(tableId: number): Promise<TableWithRows> {
+    return get<TableWithRows>(`/api/table/${tableId}`);
   },
 
-  async createRow(data: Omit<TableRow, "id">): Promise<TableRow> {
-    return post("/api/table/create", data);
+  async updateRow(id: number, data: Partial<TableRow>): Promise<TableRow> {
+    return put<TableRow>(`/api/row/${id}`, data);
   },
 
-  async updateRow(id: number, updates: Partial<Omit<TableRow, "id">>): Promise<TableRow> {
-    return put("/api/table/update", { id, ...updates });
+  async getPaginated(page: number, pageSize: number = 10): Promise<{ items: Table[]; total: number }> {
+    const res = await fetch(`/api/table/all?page=${page}&pageSize=${pageSize}`);
+    if (!res.ok) throw new Error("Failed to fetch tables");
+    const data = await res.json();
+    return data.result;
   },
 
-  async deleteRow(id: number): Promise<void> {
-    return remove("/api/table/delete", { id });
+  async updateTableWithRows(
+    id: number,
+    name: string,
+    rows: Omit<TableRow, "id" | "createdAt" | "updatedAt">[]
+    ): Promise<TableWithRows> {
+    return put<TableWithRows>("/api/table/update", { id, name, rows });
   }
 };
