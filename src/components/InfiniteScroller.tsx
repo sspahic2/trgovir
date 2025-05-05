@@ -11,7 +11,7 @@ interface InfiniteScrollerProps<T> {
 export default function InfiniteScroller<T>({
   fetchFn,
   renderItem,
-  pageSize = 10
+  pageSize = 50
 }: InfiniteScrollerProps<T>) {
   const [items, setItems] = useState<T[]>([]);
   const [page, setPage] = useState(1);
@@ -24,41 +24,49 @@ export default function InfiniteScroller<T>({
       if (loading || !hasMore) return;
       setLoading(true);
       const { items: newItems, total } = await fetchFn(page);
-  
+
       setItems((prev) => {
         const seen = new Set(prev.map((x: any) => (x as any).id));
         const uniqueNew = newItems.filter((x: any) => !seen.has(x.id));
-        return [...prev, ...uniqueNew];
+        const merged = [...prev, ...uniqueNew];
+        setHasMore(merged.length < total);
+        return merged;
       });
-  
-      setHasMore(items.length + newItems.length < total); // or use [...prev, ...uniqueNew].length
+
       setLoading(false);
     };
-  
+
     load();
   }, [page]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
+        const first = entries[0];
+        if (first.isIntersecting && hasMore && !loading) {
           setPage((prev) => prev + 1);
         }
       },
       { threshold: 1.0 }
     );
-    if (loaderRef.current) observer.observe(loaderRef.current);
+  
+    const currentRef = loaderRef.current;
+    if (currentRef) observer.observe(currentRef);
+  
     return () => {
-      if (loaderRef.current) observer.disconnect();
+      if (currentRef) observer.unobserve(currentRef);
     };
-  }, [hasMore, loading]);
+  }, [hasMore, loading]);  
 
   return (
     <div>
       {items.map(renderItem)}
+      {items.length === 0 && !loading && (
+        <div className="text-center py-4 text-gray-500">No more data.</div>
+      )}
       {hasMore && (
         <div ref={loaderRef} className="text-center py-4 text-gray-500">
-          Loading...
+          Loading.
         </div>
       )}
     </div>

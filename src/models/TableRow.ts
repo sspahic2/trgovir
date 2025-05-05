@@ -6,4 +6,5 @@ export interface TableRow {
   n: number | null;
   lgn: number | null;
   tableId: number;
+  position?: string;
 }

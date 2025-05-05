@@ -27,9 +27,12 @@ export default function Navigation() {
       <div className="glass-nav-links">
         <Link href="/dashboard" className="glass-nav-link">Home</Link>
         {isSuperAdmin && (
-          <div className="relative group">
-            <button className="glass-nav-link">Admin Panel ▾</button>
-            <div className="absolute left-0 mt-2 w-40 bg-white border rounded shadow-md opacity-0 group-hover:opacity-100 transition-all z-50">
+          <div className="group relative">
+            <div className="glass-nav-link cursor-pointer">Admin Panel ▾</div>
+
+            <div
+              className="absolute left-0 top-full w-40 bg-white border rounded shadow-md z-50 hidden group-hover:block"
+            >
               <Link href="/superadmin" className="block px-4 py-2 hover:bg-gray-100">Email</Link>
               <Link href="/superadmin/shapes" className="block px-4 py-2 hover:bg-gray-100">Shapes</Link>
             </div>

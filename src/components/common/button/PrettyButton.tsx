@@ -3,7 +3,7 @@
 import { ButtonHTMLAttributes, FC } from 'react';
 
 interface PrettyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  color?: 'green' | 'red' | 'blue';
+  color?: 'green' | 'red' | 'blue' | 'purple';
   loading?: boolean;
   outlined?: boolean; // default true
 }
@@ -25,6 +25,7 @@ const PrettyButton: FC<PrettyButtonProps> = ({
     green: 'text-green-500 border-green-500 hover:bg-green-500 hover:text-white',
     blue: 'text-blue-500 border-blue-500 hover:bg-blue-500 hover:text-white',
     red: 'text-red-500 border-red-500 hover:bg-red-500 hover:text-white',
+    purple: 'text-purple-500 border-purple-500 hover:bg-purple-500 hover:text-white'
   };
 
   // Map colors to Tailwind classes for filled style
@@ -32,6 +33,7 @@ const PrettyButton: FC<PrettyButtonProps> = ({
     green: 'bg-green-300 text-white hover:scale-[1.02]',
     blue: 'bg-blue-300 text-white hover:scale-[1.02]',
     red: 'bg-red-300 text-white hover:scale-[1.02]',
+    purple: 'bg-purple-300 text-white hover:scale-[1.02]'
   };
 
   const colorClasses = outlined

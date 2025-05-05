@@ -1,3 +1,4 @@
+import { Table } from "@/models/Table";
 import { prisma } from "../../lib/prisma";
 import type { TableRow } from "@/models/TableRow";
 
@@ -34,10 +35,12 @@ export const TableRepository = {
     return prisma.tableRow.delete({ where: { id } });
   },
 
-  async createWithRows(name: string, rows: Omit<TableRow, "id" | "tableId" | "createdAt" | "updatedAt">[]) {
+  async createWithRows(table: Omit<Table, "id">, rows: Omit<TableRow, "id" | "tableId" | "createdAt" | "updatedAt">[]) {
+    console.log({table, rows})
     return prisma.table.create({
       data: {
-        name,
+        ...table,
+        id: undefined,
         rows: {
           create: rows.map((row) => ({
             oblikIMere: row.oblikIMere,
@@ -45,6 +48,7 @@ export const TableRepository = {
             lg: Number(row.lg),
             n: Number(row.n),
             lgn: Number(row.lgn),
+            position: row.position
           })),
         },
       },
@@ -72,7 +76,7 @@ export const TableRepository = {
 
   async updateWithRows(
     id: number,
-    name: string,
+    table: Table,
     rows: Omit<TableRow, "id" | "createdAt" | "updatedAt">[]
   ) {
     // Delete existing rows
@@ -82,7 +86,7 @@ export const TableRepository = {
     const updated = await prisma.table.update({
       where: { id },
       data: {
-        name,
+        ...table,
         rows: {
           create: rows.map(row => ({
             oblikIMere: row.oblikIMere,
@@ -90,6 +94,7 @@ export const TableRepository = {
             lg: Number(row.lg),
             n: Number(row.n),
             lgn: Number(row.lgn),
+            position: row.position
           }))
         }
       },

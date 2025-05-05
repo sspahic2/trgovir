@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef } from "react";
-import { Table, TableRow } from "@prisma/client";
 import {
   serializeSquareConfig,
   serializeLineConfig,
@@ -7,9 +6,11 @@ import {
   serializeShapeWithInputs,
 } from "@/lib/serializer/serializeShapeConfig";
 import { parseGeneralConfig } from "@/lib/parser/parseShapeConfig";
+import { TableRow } from "@/models/TableRow";
+import { Table } from "@/models/Table";
 
-type EditableRow = Omit<TableRow, "id" | "createdAt" | "updatedAt">;
-type EditableTable = Omit<Table, "createdAt" | "updatedAt"> & {
+export type EditableRow = Omit<TableRow, "id" | "createdAt" | "updatedAt">;
+export type EditableTable = Omit<Table, "createdAt" | "updatedAt"> & {
   createdAt: Date;
   updatedAt: Date;
   rows: EditableRow[];
@@ -35,11 +36,12 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
       initialImportedRows.map((row, index) => ({
           tableId: 0,
           // adapt based on your table shape
-          oblikIMere: "",
+          oblikIMere: row.oblikIMere,
           diameter: row.diameter ?? null,
           lg: row.lg ?? null,
           n: row.n ?? null,
           lgn: row.lgn ?? null,
+          position: row.position ?? undefined
       }))
     :
       [
@@ -50,6 +52,7 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
           n: null,
           lgn: null,
           tableId: 0,
+          position: undefined
         },
       ],
   });
@@ -82,9 +85,9 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
     return rows;
   };
 
-  const updateName = (name: string) => {
-    _setTable((prev) => ({ ...prev, name }));
-  };
+  function updateTableField<K extends keyof EditableTable>(field: K, value: EditableTable[K]) {
+    _setTable((prev) => ({ ...prev, [field]: value }));
+  }
 
   const setSaving = (val: boolean) => _setIsSaving(val);
   const setSavedStatus = (val: boolean) => _setSaved(val);
@@ -104,6 +107,7 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
           n: null,
           lgn: null,
           tableId: 0,
+          position: undefined
         },
       ],
     });
@@ -122,6 +126,7 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
           n: null,
           lgn: null,
           tableId: prev.id,
+          position: undefined
         },
       ],
     }));
@@ -299,7 +304,7 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
     nextFocusRef,
     inputRefs,
 
-    updateName,
+    updateTableField,
     setSaving,
     setSavedStatus,
     markAsSuperAdmin,

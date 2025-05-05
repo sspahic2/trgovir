@@ -871,6 +871,11 @@ pdf-parse@^1.1.1:
     debug "^3.1.0"
     node-ensure "^0.0.0"
 
+pdf417-generator@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/pdf417-generator/-/pdf417-generator-1.0.5.tgz#67379e27228f0f6dedf07b7a2155d6dcf05495fb"
+  integrity sha512-BRkzAH+RgIyzrPbtUu651x+VwQheC1q+fs50TmWZkAPDzwcVmXSoVtfHKQjjpM7NweGr/y7OfEZxnzpdm1TqLw==
+
 pdfjs-dist@^5.1.91:
   version "5.1.91"
   resolved "https://registry.yarnpkg.com/pdfjs-dist/-/pdfjs-dist-5.1.91.tgz#d5d90efacaf17d1c8d12310740eb7070322886d8"

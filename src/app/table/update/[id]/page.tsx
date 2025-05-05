@@ -32,9 +32,9 @@ export default function TableUpdatePage() {
       userEmail={session.user.email}
       initialTable={initialData}
       shapeOptions={shapeOptions}
-      onSave={async (name, rows) => {
+      onSave={async (table, rows) => {
         if (!initialData) return;
-        await TableService.updateTableWithRows(initialData.id, name, rows);
+        await TableService.updateTableWithRows(initialData.id, table, rows);
       }}
     />
   );

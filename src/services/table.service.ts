@@ -2,15 +2,16 @@
 import { Table } from "@/models/Table";
 import { get, post, put } from "./base.service";
 import { TableRow } from "@/models/TableRow";
+import { EditableRow, EditableTable } from "@/hooks/useTableEditor";
 
 type TableWithRows = Table & { rows: TableRow[] };
 
 export const TableService = {
   async createTableWithRows(
-    name: string,
-    rows: Omit<TableRow, "id" | "tableId" | "createdAt" | "updatedAt">[]
+    table: EditableTable,
+    rows: EditableRow[]
   ): Promise<TableWithRows> {
-    return post<TableWithRows>("/api/table/create", { name, rows });
+    return post<TableWithRows>("/api/table/create", { table, rows });
   },
 
   async getTableWithRows(tableId: number): Promise<TableWithRows> {
@@ -30,9 +31,9 @@ export const TableService = {
 
   async updateTableWithRows(
     id: number,
-    name: string,
-    rows: Omit<TableRow, "id" | "createdAt" | "updatedAt">[]
+    table: EditableTable,
+    rows: EditableRow[]
     ): Promise<TableWithRows> {
-    return put<TableWithRows>("/api/table/update", { id, name, rows });
+    return put<TableWithRows>("/api/table/update", { id, table, rows });
   }
 };

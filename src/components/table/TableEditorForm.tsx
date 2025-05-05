@@ -5,10 +5,9 @@ import PrettyInput from "@/components/common/input/PrettyInput";
 import PrettyButton from "@/components/common/button/PrettyButton";
 import PrettySidebar from "@/components/common/sidebar/PrettySidebar";
 import { PlusCircle, Trash2 } from "lucide-react";
-import { useTableEditor } from "@/hooks/useTableEditor";
+import { EditableTable, useTableEditor } from "@/hooks/useTableEditor";
 import { EmailService } from "@/services/email.service";
 import { useRouter } from "next/navigation";
-import type { TableRow } from "@prisma/client";
 import SquareWithTailShape, { SquareWithTailProps } from "@/components/shape/SquareWithTail";
 import LineShape, { LineShapeProps } from "@/components/shape/Line";
 import ConnectedLinesShape, { ConnectedLinesShapeProps } from "@/components/shape/ConnectingLines";
@@ -17,19 +16,17 @@ import ShapeCard from "../shape/ShapeCard";
 import { parseGeneralConfig, parseInputValues } from "@/lib/parser/parseShapeConfig";
 import ShapeCanvas from "../shape/ShapeCanvas";
 import { useShapeInputRefs } from "@/hooks/useShapeInputRefs";
+import { TableRow } from "@/models/TableRow";
+import { Table } from "@/models/Table";
 
 interface TableEditorFormProps {
   mode: 'create' | 'update';
   onSave: (
-    name: string,
+    table: EditableTable,
     rows: Omit<TableRow, 'id' | 'createdAt' | 'updatedAt'>[]
   ) => Promise<void>;
   onCancel?: () => void;
-  initialTable?: {
-    id: number;
-    name: string;
-    rows: Omit<TableRow, 'id' | 'createdAt' | 'updatedAt'>[];
-  };
+  initialTable?: Table & { rows: Omit<TableRow, 'id' | 'createdAt' | 'updatedAt'>[] };
   userEmail: string;
   shapeOptions: ShapeConfiguration[];
   importedRows?: TableRow[];
@@ -47,7 +44,7 @@ export default function TableEditorForm({
   const router = useRouter();
   const {
     table,
-    updateName,
+    updateTableField,
     isSaving,
     setSaving,
     saved,
@@ -170,8 +167,9 @@ export default function TableEditorForm({
   const handleSave = async () => {
     try {
       const rows = await handleSaveHook(); // renamed for clarity
-      await onSave(table.name, rows);
+      await onSave(table, rows);
       setSavedStatus(true);
+
       if (mode === "create") resetEditor();
       router.replace("/dashboard");
     } catch (err) {
@@ -183,13 +181,42 @@ export default function TableEditorForm({
 
   if (!isSuperAdmin) return null;
 
+  let groupingByPosition = Object.entries(
+    table.rows.reduce((acc, row) => {
+      const key = row.position || "Unspecified";
+
+      if(!acc[key]) acc[key] = [];
+
+      acc[key].push(row);
+      return acc;
+    }, {} as Record<string, typeof table.rows>)
+  );
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
+      {/* Metadata input fields */}
+      <div className="grid grid-cols-3 gap-4 mb-4 max-w-6xl">
+        <PrettyInput
+          value={table.client || ""}
+          onChange={(e) => updateTableField("client", e.target.value)}
+          placeholder="Klijent"
+        />
+        <PrettyInput
+          value={table.address || ""}
+          onChange={(e) => updateTableField("address", e.target.value)}
+          placeholder="Adresa"
+        />
+        <PrettyInput
+          value={table.job || ""}
+          onChange={(e) => updateTableField("job", e.target.value)}
+          placeholder="Gradiliste"
+        />
+      </div>
       <div className="flex justify-between items-center mb-4">
         <PrettyInput
           type="text"
           value={table.name}
-          onChange={e => updateName(e.target.value)}
+          onChange={e => updateTableField("name", e.target.value)}
           className="w-xl font-semibold text-start"
         />
         <div className="flex gap-2 w-5xl justify-end">
@@ -201,120 +228,147 @@ export default function TableEditorForm({
           </PrettyButton>
         </div>
       </div>
+      {
+        groupingByPosition.map(([position, rows], groupIdx) => (
+          <div key={position} className="mb-6">
+            <h2 className="text-lg font-bold mb-2">
+              {position}
+            </h2>
+            <table
+              className="w-full border border-gray-300"
+              style={{ display: 'grid', gridTemplateColumns: '1fr 3fr 1fr 1fr 1fr 1fr 1fr' }}
+            >
+              <thead className="bg-gray-500 text-sm" style={{ display: 'contents' }}>
+                <tr style={{ display: 'contents' }}>
+                  <th className="p-2 border">ozn</th>
+                  <th className="p-2 border">oblik i mere</th>
+                  <th className="p-2 border">Ø</th>
+                  <th className="p-2 border">lg</th>
+                  <th className="p-2 border">n</th>
+                  <th className="p-2 border">lgn</th>
+                  <th className="p-2 border"></th>
+                </tr>
+              </thead>
+              <tbody style={{ display: 'contents' }}>
+                {rows.map((row, index) => (
+                  <tr key={index} style={{ display: 'contents' }}>
+                    <td className="border px-2 py-1 text-center">{index + 1}</td>
 
-      <table
-        className="w-full border border-gray-300"
-        style={{ display: 'grid', gridTemplateColumns: '1fr 3fr 1fr 1fr 1fr 1fr 1fr' }}
-      >
-        <thead className="bg-gray-500 text-sm" style={{ display: 'contents' }}>
-          <tr style={{ display: 'contents' }}>
-            <th className="p-2 border">ozn</th>
-            <th className="p-2 border">oblik i mere</th>
-            <th className="p-2 border">Ø</th>
-            <th className="p-2 border">lg</th>
-            <th className="p-2 border">n</th>
-            <th className="p-2 border">lgn</th>
-            <th className="p-2 border"></th>
-          </tr>
-        </thead>
-        <tbody style={{ display: 'contents' }}>
-          {table.rows.map((row, index) => (
-            <tr key={index} style={{ display: 'contents' }}>
-              <td className="border px-2 py-1 text-center">{index + 1}</td>
+                    <td className="border px-2 py-1">
+                      {row.oblikIMere ? (
+                        <div
+                          className="flex justify-center items-center cursor-pointer"
+                          onClick={() => {
+                            if(row.oblikIMere.startsWith("extracted_shapes")) return;
 
-              <td className="border px-2 py-1">
-                {row.oblikIMere ? (
-                  <div
-                    className="flex justify-center items-center cursor-pointer"
-                    onClick={() => setPickingRowIndex(index)}
-                  >
-                    {(() => {
-                      const shapeType = row.oblikIMere.split(';')[0] as ShapeType;
-                      const parsed = parseGeneralConfig(row.oblikIMere);
+                            setPickingRowIndex(index)
+                          }}
+                        >
+                          {
+                            row.oblikIMere?.startsWith("extracted_shapes") ?
+                            (
+                              <div className="w-full flex justify-center items-center">
+                                <img
+                                  src={`${process.env.NEXT_PUBLIC_FLASK_API ?? ""}${row.oblikIMere}`}
+                                  alt="Shape image"
+                                  className="max-h-[80px] object-contain"
+                                />
+                              </div>
+                            )
 
-                      const squareProps = shapeType === 'SquareWithTail' ? parsed as SquareWithTailProps : {};
-                      const lineProps = shapeType === 'Line' ? parsed as LineShapeProps : {};
-                      const connectedProps = shapeType === 'ConnectingLines' ? parsed as ConnectedLinesShapeProps : {};
+                            :
+               
+                            (() => {
+                              const shapeType = row.oblikIMere.split(';')[0] as ShapeType;
+                              const parsed = parseGeneralConfig(row.oblikIMere);
 
-                      return (
-                        <ShapeCanvas
-                          shapeType={shapeType}
-                          mode="input"
-                          squareProps={squareProps}
-                          lineProps={lineProps}
-                          connectedProps={connectedProps}
-                          selectedCoords={shapeOptions.find(s => s.configuration === row.oblikIMere)?.selectedCoords ?? []}
-                          onToggleCoord={() => {}}
-                          width={200}
-                          height={200}
-                          rowIndex={index}
-                          handleShapeKeyDown={handleShapeKeyDown}
-                          setShapeInputRef={setShapeInputRef}
-                          rowInputs={rowInputs}
-                          setInputValue={setInputValue}
-                        />
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <PrettyButton
-                    color="blue"
-                    className="w-full"
-                    onClick={() => setPickingRowIndex(index)}
-                  >
-                    Choose
-                  </PrettyButton>
-                )}
-              </td>
+                              const squareProps = shapeType === 'SquareWithTail' ? parsed as SquareWithTailProps : {};
+                              const lineProps = shapeType === 'Line' ? parsed as LineShapeProps : {};
+                              const connectedProps = shapeType === 'ConnectingLines' ? parsed as ConnectedLinesShapeProps : {};
 
-              <td className="border px-2 py-1">
-                <PrettyInput
-                  type="number"
-                  value={row.diameter ?? ""}
-                  onChange={e => updateRow(index, "diameter", e.target.value)}
-                  ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][1] = el!; }}
-                  onKeyDown={e => handleKeyCustom(e, index, '1')}
-                />
-              </td>
-              <td className="border px-2 py-1">
-                <PrettyInput
-                  type="number"
-                  value={row.lg ?? ""}
-                  onChange={e => updateRow(index, "lg", e.target.value)}
-                  ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][2] = el!; }}
-                  onKeyDown={e => handleKeyCustom(e, index, '2')}
-                />
-              </td>
-              <td className="border px-2 py-1">
-                <PrettyInput
-                  type="number"
-                  value={row.n ?? ""}
-                  onChange={e => updateRow(index, "n", e.target.value)}
-                  ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][3] = el!; }}
-                  onKeyDown={e => handleKeyCustom(e, index, '3')}
-                />
-              </td>
-              <td className="border px-2 py-1">
-                <PrettyInput
-                  type="number"
-                  value={row.lgn ?? ""}
-                  onChange={e => updateRow(index, "lgn", e.target.value)}
-                  ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][4] = el!; }}
-                  onKeyDown={e => handleKeyCustom(e, index, '4')}
-                />
-              </td>
-              <td className="border px-2 py-1">
-                <button
-                  onClick={() => deleteRow(index)}
-                  className="w-full h-full flex items-center justify-center cursor-pointer"
-                >
-                  <Trash2 size={18} className="text-red-500" />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                              return (
+                                <ShapeCanvas
+                                  shapeType={shapeType}
+                                  mode="input"
+                                  squareProps={squareProps}
+                                  lineProps={lineProps}
+                                  connectedProps={connectedProps}
+                                  selectedCoords={shapeOptions.find(s => s.configuration === row.oblikIMere)?.selectedCoords ?? []}
+                                  onToggleCoord={() => {}}
+                                  width={200}
+                                  height={200}
+                                  rowIndex={index}
+                                  handleShapeKeyDown={handleShapeKeyDown}
+                                  setShapeInputRef={setShapeInputRef}
+                                  rowInputs={rowInputs}
+                                  setInputValue={setInputValue}
+                                />
+                              );
+                            })()
+                          }
+                        </div>
+                      ) : (
+                        <PrettyButton
+                          color="blue"
+                          className="w-full"
+                          onClick={() => setPickingRowIndex(index)}
+                        >
+                          Choose
+                        </PrettyButton>
+                      )}
+                    </td>
+
+                    <td className="border px-2 py-1">
+                      <PrettyInput
+                        type="number"
+                        value={row.diameter ?? ""}
+                        onChange={e => updateRow(index, "diameter", e.target.value)}
+                        ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][1] = el!; }}
+                        onKeyDown={e => handleKeyCustom(e, index, '1')}
+                      />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <PrettyInput
+                        type="number"
+                        value={row.lg ?? ""}
+                        onChange={e => updateRow(index, "lg", e.target.value)}
+                        ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][2] = el!; }}
+                        onKeyDown={e => handleKeyCustom(e, index, '2')}
+                      />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <PrettyInput
+                        type="number"
+                        value={row.n ?? ""}
+                        onChange={e => updateRow(index, "n", e.target.value)}
+                        ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][3] = el!; }}
+                        onKeyDown={e => handleKeyCustom(e, index, '3')}
+                      />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <PrettyInput
+                        type="number"
+                        value={row.lgn ?? ""}
+                        onChange={e => updateRow(index, "lgn", e.target.value)}
+                        ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][4] = el!; }}
+                        onKeyDown={e => handleKeyCustom(e, index, '4')}
+                      />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <button
+                        onClick={() => deleteRow(index)}
+                        className="w-full h-full flex items-center justify-center cursor-pointer"
+                      >
+                        <Trash2 size={18} className="text-red-500" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))
+      }
 
       <PrettyButton
         onClick={addRow}

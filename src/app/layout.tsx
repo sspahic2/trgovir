@@ -12,8 +12,8 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
 
-  const hideNavOnRoutes = ["/auth/login"];
-  const shouldShowNav = !hideNavOnRoutes.includes(pathname);
+  const hideNavOnRoutes = ["/auth/login", "/table/print"];
+  const shouldShowNav = !hideNavOnRoutes.some(path => pathname.startsWith(path));
 
   return (
     <html lang="en">
