@@ -41,6 +41,7 @@ export default function Dashboard() {
     const res = await fetch(`${process.env.NEXT_PUBLIC_FLASK_API}extract-preview`, {
       method: 'POST',
       body: formData,
+      credentials: "include"
     });
 
     if (!res.ok) {
