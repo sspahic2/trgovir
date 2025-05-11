@@ -32,11 +32,13 @@ export const TableRepository = {
   },  
 
   async delete(id: number) {
-    return prisma.tableRow.delete({ where: { id } });
+    // remove all rows first to avoid foreign key issues
+    await prisma.tableRow.deleteMany({ where: { tableId: id } });
+    return await prisma.table.delete({ where: { id } });
+    
   },
 
   async createWithRows(table: Omit<Table, "id">, rows: Omit<TableRow, "id" | "tableId" | "createdAt" | "updatedAt">[]) {
-    console.log({table, rows})
     return prisma.table.create({
       data: {
         ...table,

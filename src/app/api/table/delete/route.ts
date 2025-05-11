@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth-guard";
-import { TableService } from "@/services/table.service";
 import { TableRepository } from "@/repositories/table.repository";
 
 export async function POST(req: Request) {

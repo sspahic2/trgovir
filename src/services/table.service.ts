@@ -1,8 +1,8 @@
 // src/services/table.service.ts
-import { Table } from "@/models/Table";
 import { get, post, put } from "./base.service";
-import { TableRow } from "@/models/TableRow";
-import { EditableRow, EditableTable } from "@/hooks/useTableEditor";
+import type { Table } from "@/models/Table";
+import type { TableRow } from "@/models/TableRow";
+import type { EditableRow, EditableTable } from "@/hooks/useTableEditor";
 
 type TableWithRows = Table & { rows: TableRow[] };
 
@@ -22,7 +22,10 @@ export const TableService = {
     return put<TableRow>(`/api/row/${id}`, data);
   },
 
-  async getPaginated(page: number, pageSize: number = 10): Promise<{ items: Table[]; total: number }> {
+  async getPaginated(
+    page: number,
+    pageSize: number = 10
+  ): Promise<{ items: Table[]; total: number }> {
     const res = await fetch(`/api/table/all?page=${page}&pageSize=${pageSize}`);
     if (!res.ok) throw new Error("Failed to fetch tables");
     const data = await res.json();
@@ -33,7 +36,12 @@ export const TableService = {
     id: number,
     table: EditableTable,
     rows: EditableRow[]
-    ): Promise<TableWithRows> {
+  ): Promise<TableWithRows> {
     return put<TableWithRows>("/api/table/update", { id, table, rows });
-  }
+  },
+
+  // ← NEW delete method
+  async delete(id: number): Promise<boolean> {
+    return post<boolean>("/api/table/delete", { id });
+  },
 };

@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import InfiniteScroller from "@/components/InfiniteScroller";
 import { Table } from "@/models/Table";
-import { useRouter } from "next/navigation";
 import { TableService } from "@/services/table.service";
 import PrettyButton from "@/components/common/button/PrettyButton";
-import { PlusCircle, Printer } from "lucide-react";
+import { PlusCircle, Printer, Table as TableIcon, Trash2 } from "lucide-react";
 import { PrettyModal } from "@/components/common/modal/PrettyModal";
 
 export default function Dashboard() {
@@ -16,14 +16,48 @@ export default function Dashboard() {
   const [isImporting, setIsImporting] = useState(false);
   const [printModal, setPrintModal] = useState(-100);
 
+  const [tables, setTables] = useState<Table[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/auth/login");
     }
   }, [status, router]);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (status === "authenticated") {
+      reload();
+    }
+  }, [status]);
+
   if (status !== "authenticated") return null;
+
+  async function loadMore() {
+    if (loading) return;
+    setLoading(true);
+    const res = await TableService.getPaginated(page, 10);
+    setTables(prev => [...prev, ...res.items]);
+    setTotal(res.total);
+    setPage(prev => prev + 1);
+    setLoading(false);
+  }
+
+  async function reload() {
+    setTables([]);
+    setPage(1);
+    setTotal(0);
+    setLoading(true);
+    const res = await TableService.getPaginated(1, 10);
+    setTables(res.items);
+    setTotal(res.total);
+    setPage(2);
+    setLoading(false);
+  }
 
   function handleImportClick() {
     fileInputRef.current?.click();
@@ -34,14 +68,13 @@ export default function Dashboard() {
     if (!file) return;
 
     setIsImporting(true);
-
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     const res = await fetch(`${process.env.NEXT_PUBLIC_FLASK_API}extract-preview`, {
-      method: 'POST',
+      method: "POST",
       body: formData,
-      credentials: "include"
+      credentials: "include",
     });
 
     if (!res.ok) {
@@ -51,16 +84,13 @@ export default function Dashboard() {
     }
 
     const extractedData = await res.json();
-    // Now redirect to /table/create with extracted data
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    fileInputRef.current!.value = "";
+    setIsImporting(false);
     router.push(`/table/create?imported=${encodeURIComponent(JSON.stringify(extractedData))}`);
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-
+    <div className="p-8 max-w-5xl mx-auto">
       <input
         ref={fileInputRef}
         type="file"
@@ -79,12 +109,10 @@ export default function Dashboard() {
         >
           <PlusCircle size={20} />
         </PrettyButton>
-
         <PrettyButton
           color="green"
           className="flex items-center justify-center p-0 text-sm"
           onClick={handleImportClick}
-          aria-label="Import table from PDF"
           loading={isImporting}
           disabled={isImporting}
         >
@@ -101,34 +129,42 @@ export default function Dashboard() {
         </div>
 
         <InfiniteScroller<Table>
-          fetchFn={async (page) => {
-            const res = await TableService.getPaginated(page, 10);
-            return res;
-          }}
-          pageSize={10}
+          items={tables}
+          hasMore={tables.length < total}
+          loading={loading}
+          onLoadMore={loadMore}
           renderItem={(item, index) => (
             <div
               key={item.id}
               className="px-4 py-2 border-t text-sm grid grid-cols-[40px_1fr_140px_80px] items-center hover:bg-gray-200 transition group"
             >
               <div>{index + 1}</div>
-
               <div
                 className="font-medium cursor-pointer"
                 onClick={() => router.push(`/table/update/${item.id}`)}
               >
                 {item.name}
               </div>
-
               <div className="text-gray-500">{formatDate(item.updatedAt)}</div>
-
-              <div>
+              <div className="flex items-center justify-center gap-2">
                 <button
                   onClick={() => setPrintModal(item.id)}
-                  className="text-purple-600 hover:text-purple-800 transition cursor-pointer"
-                  title="Print label"
+                  className="text-purple-600 hover:text-purple-800 transition"
+                  title="Choose print layout"
                 >
-                  <Printer className="w-5 h-5 text-purple-600 hover:text-purple-800" />
+                  <Printer className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm("Jeste li sigurni da želite obrisati ovu tabelu?")) {
+                      await TableService.delete(item.id);
+                      await reload(); // trigger full reload
+                    }
+                  }}
+                  className="text-red-600 hover:text-red-800 transition"
+                  title="Delete table"
+                >
+                  <Trash2 className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -149,7 +185,15 @@ export default function Dashboard() {
                 className="border-2 border-zinc-300 rounded-lg hover:border-purple-500 transition p-2"
               >
                 <svg viewBox="0 0 100 100" className="w-24 h-24">
-                  <rect x="10" y="10" width="80" height="80" fill="#e5e5e5" stroke="#000" strokeWidth="2" />
+                  <rect
+                    x="10"
+                    y="10"
+                    width="80"
+                    height="80"
+                    fill="#e5e5e5"
+                    stroke="#000"
+                    strokeWidth="2"
+                  />
                 </svg>
                 <div className="text-center mt-2 text-sm">1 po strani</div>
               </button>
@@ -159,12 +203,10 @@ export default function Dashboard() {
                   window.location.assign(`/table/print/${printModal}?layout=grid`)
                 }
                 className="border-2 border-zinc-300 rounded-lg hover:border-purple-500 transition p-2"
+                title="Mreža"
               >
-                <svg viewBox="0 0 100 100" className="w-24 h-24">
-                  <rect x="10" y="10" width="80" height="35" fill="#e5e5e5" stroke="#000" strokeWidth="2" />
-                  <rect x="10" y="55" width="80" height="35" fill="#e5e5e5" stroke="#000" strokeWidth="2" />
-                </svg>
-                <div className="text-center mt-2 text-sm">2 po strani</div>
+                <TableIcon className="w-24 h-24" />
+                <div className="text-center mt-2 text-sm">Tabela</div>
               </button>
             </div>
           </PrettyModal>
@@ -182,17 +224,9 @@ function formatDate(dateStr: string) {
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffHours < 1) {
-    return `${diffMinutes} minute(s) ago`;
-  }
-
-  if (diffHours < 24) {
-    return `${diffHours} hour(s) ago`;
-  }
-
-  if (diffDays < 3) {
-    return `${diffDays} day(s) ago`;
-  }
+  if (diffHours < 1) return `${diffMinutes} minute(s) ago`;
+  if (diffHours < 24) return `${diffHours} hour(s) ago`;
+  if (diffDays < 3) return `${diffDays} day(s) ago`;
 
   return date.toLocaleString("en-US", {
     month: "short",
