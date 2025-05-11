@@ -105,7 +105,7 @@ export default function PrintTable({ table, shapeOptions }: PrintTableProps) {
                 <tbody>
                   {posRows.map((row, idx) => {
                     const raw = row.lg != null && row.n != null ? row.lg * row.n : null;
-                    const ukupno = raw != null ? raw.toFixed(2) : '-';
+                    const ukupno = row.lgn != null ? row.lgn.toFixed(2) : '-';
                     return (
                       <tr key={row.id}>
                         <td style={td}>{idx + 1}</td>
