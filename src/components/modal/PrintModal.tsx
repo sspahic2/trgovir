@@ -41,34 +41,6 @@ export default function PrintModal({
           <div className="text-center mt-2 text-sm">1 po strani</div>
         </button>
 
-        {/* Grid layout */}
-        <button
-          onClick={() => openInNewTab("grid")}
-          className="border-2 border-zinc-300 rounded-lg hover:border-purple-500 transition p-2"
-        >
-          <svg viewBox="0 0 100 100" className="w-24 h-24">
-            <rect
-              x="10"
-              y="10"
-              width="80"
-              height="35"
-              fill="#e5e5e5"
-              stroke="#000"
-              strokeWidth="2"
-            />
-            <rect
-              x="10"
-              y="55"
-              width="80"
-              height="35"
-              fill="#e5e5e5"
-              stroke="#000"
-              strokeWidth="2"
-            />
-          </svg>
-          <div className="text-center mt-2 text-sm">2 po strani</div>
-        </button>
-
         {/* Table layout */}
         <button
           onClick={() => openInNewTab("table")}

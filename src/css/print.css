@@ -1,0 +1,22 @@
+@media print {
+  /* @page {
+    size: 10cm 10cm;
+    margin: 0;
+  } */
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* .print-label-container {
+    width: 10cm;
+    height: 10cm;
+    box-sizing: border-box;
+  } */
+
+  /* hide any unwanted elements in print mode */
+  .no-print {
+    display: none !important;
+  }
+}

@@ -8,14 +8,17 @@ import { TableService } from "@/services/table.service";
 import { Table } from "@/models/Table";
 import { TableRow } from "@/models/TableRow";
 import Label from "@/components/common/print/PrintLabel";
-import PrintTable from "@/components/common/print/PrintTable";  // ← New import
+import PrintTable from "@/components/common/print/PrintTable";
 import { ShapeConfiguration } from "@/models/ShapeConfiguration";
 import { ConfigurationService } from "@/services/configuration.service";
+import '@/css/print.css';
+import { usePrintStyles } from "@/hooks/usePrintStyles";
 
 export default function PrintableLabels() {
   const params = useParams();
   const searchParams = useSearchParams();
   const layout = searchParams.get("layout") ?? "single";
+  usePrintStyles(layout);
   const [shapeOptions, setShapeOptions] = useState<ShapeConfiguration[] | null>(null);
 
   const [table, setTable] = useState<(Table & { rows: TableRow[] }) | null>(null);
@@ -31,7 +34,7 @@ export default function PrintableLabels() {
           if (b.diameter == null) return -1;
           return a.diameter - b.diameter;
         });
-
+        
         if (layout === "grid") {
           const grouped: Record<string, typeof rows> = {};
           rows.forEach((row) => {
@@ -91,7 +94,7 @@ useEffect(() => {
   if (!table) return null;
 
   return (
-    <div className="text-black font-[Poppins] text-[10pt] leading-tight print:p-4 print:bg-white">
+    <div className={`text-black font-[Poppins] text-[10pt] leading-tight print:bg-white ${layout === 'table' ? 'print:p-1' : ''}`}>
       {layout === "table" ? (
         // New table-printing branch
         <PrintTable table={table} shapeOptions={shapeOptions} />
@@ -139,14 +142,13 @@ useEffect(() => {
           <div
             key={row.id}
             style={{
-              width: "21cm",
-              height: "29.7cm",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               pageBreakAfter: index < table.rows.length - 1 ? "always" : "auto",
               margin: "auto",
             }}
+            className="print-label-container"
           >
             <Label
               row={row}
