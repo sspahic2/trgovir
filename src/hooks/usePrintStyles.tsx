@@ -10,7 +10,7 @@ export function usePrintStyles(layout: string) {
 
     style.innerHTML = `
       @page {
-        ${layout === 'single' ? 'size: 10cm 10cm; margin: 0.5cm;' : ''}
+        ${layout === 'single' ? 'size: 10cm 10cm; margin: 1cm 0.5cm 0cm 0.5cm;' : ''}
       
 
       .print-label-container {

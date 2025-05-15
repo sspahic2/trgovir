@@ -18,24 +18,24 @@ export default function TableCreateContent() {
   const [importedRows, setImportedRows] = useState<TableRow[] | null>(null);
 
   useEffect(() => {
-    const imported = searchParams.get('imported');
-    if (!imported) return;
-  
+    const stored = sessionStorage.getItem("imported_table_data");
+    if (!stored) return;
+
     try {
-      const decoded = decodeURIComponent(imported);
-      const parsed = JSON.parse(decoded);
-      console.log({decoded})
+      const parsed = JSON.parse(stored);
+      sessionStorage.removeItem("imported_table_data");
+
       const flatRows = !Array.isArray(parsed)
         ? Object.entries(parsed).flatMap(([position, rows]) =>
             (rows as any[]).map((row) => ({ ...row, position }))
           )
         : parsed;
-  
+
       setImportedRows(flatRows);
     } catch (err) {
       console.error("Failed to parse imported data", err);
     }
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     if (!session?.user?.email) return;

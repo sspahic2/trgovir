@@ -28,7 +28,7 @@ export default function Label({
         <img
           src={`${process.env.NEXT_PUBLIC_FLASK_API ?? ""}${row.oblikIMere}`}
           alt="Oblik i Mere"
-          className="max-h-28 object-contain mx-auto mb-2"
+          className="max-h-32 object-contain mx-auto"
         />
       );
     }
@@ -42,7 +42,7 @@ export default function Label({
       const connectedProps = shapeType === 'ConnectingLines' ? parsed as ConnectedLinesShapeProps : {};
 
       return (
-        <div className="flex justify-center mb-2">
+        <div className="flex justify-center">
           <ShapeCanvas
             shapeType={shapeType}
             mode="view"
@@ -62,31 +62,38 @@ export default function Label({
   };
 
   return (
-    <div className="w-[9cm] h-[9cm] p-5 flex flex-col justify-between border-[2px] border-black box-border">
-      {/* Barcode at the top */}
-      <div className="flex justify-start mb-2">
-        <canvas ref={canvasRef} className="h-16" />
-      </div>
+    <div
+      className="w-[9cm] h-[9cm] p-5 pt-6 pb-4 box-border flex items-center justify-center"
+      style={{
+        transform: "rotate(90deg)",
+        transformOrigin: "center",
+        overflow: "hidden",
+      }}
+    >
+      <div className="flex flex-col justify-between w-full h-full">
+        {/* POS */}
+        <div className="text-center text-xs font-bold mb-2">POS: <span className="underline">{row.position}</span></div>
 
-      {/* Info: Klijent, Adresa, Gradilište */}
-      <div className="text-xs space-y-1 mb-2">
-        <div>KLIJENT: <span className="font-bold underline">{table.client}</span></div>
-        <div>ADRESA: <span className="font-bold underline">{table.address}</span></div>
-        <div>GRADILIŠTE: <span className="font-bold underline">{table.job}</span></div>
-      </div>
+        {/* Shape/Image */}
+        <div className="mb-2">{renderOblikIMere()}</div>
 
-      {/* oblikIMere rendering */}
-      {renderOblikIMere()}
+        {/* Table info */}
+        <div className="text-xs space-y-1 mb-2 text-center">
+          <div>KLIJENT: <span className="font-bold underline">{table.client}</span></div>
+          <div>ADRESA: <span className="font-bold underline">{table.address}</span></div>
+          <div>GRADILIŠTE: <span className="font-bold underline">{table.job}</span></div>
+        </div>
 
-      {/* Position */}
-      <div className="text-center text-xs mb-2">
-        POS: <span className="font-bold underline">{row.position}</span>
-      </div>
+        {/* Barcode */}
+        <div className="flex justify-center mb-2">
+          <canvas ref={canvasRef} className="max-h-16" />
+        </div>
 
-      {/* n Ø diameter     Lg: value */}
-      <div className="flex justify-between text-center font-medium text-lg">
-        <div>{row.n ?? "-"} Ø {row.diameter ?? "-"}</div>
-        <div>Lg: {row.lg ?? "-"}</div>
+        {/* Dimensions */}
+        <div className="flex justify-between text-center font-medium text-lg">
+          <div>{row.n ?? "-"} Ø {row.diameter ?? "-"}</div>
+          <div>Lg: {row.lg ?? "-"}</div>
+        </div>
       </div>
     </div>
   );

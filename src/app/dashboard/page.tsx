@@ -85,10 +85,12 @@ export default function Dashboard() {
     }
 
     const extractedData = await res.json();
+    sessionStorage.setItem("imported_table_data", JSON.stringify(extractedData));
     fileInputRef.current!.value = "";
     setIsImporting(false);
-    router.push(`/table/create?imported=${encodeURIComponent(JSON.stringify(extractedData))}`);
+    router.push(`/table/create`);
   }
+
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
