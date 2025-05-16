@@ -252,7 +252,7 @@ export default function TableEditorForm({
               <tbody style={{ display: 'contents' }}>
                 {rows.map((row, index) => (
                   <tr key={index} style={{ display: 'contents' }}>
-                    <td className="border px-2 py-1 text-center">{index + 1}</td>
+                    <td className="border px-2 py-1 text-center">{row.ozn}</td>
 
                     <td className="border px-2 py-1">
                       {row.oblikIMere ? (

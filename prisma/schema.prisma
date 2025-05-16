@@ -26,6 +26,7 @@ model Table {
 
 model TableRow {
   id          Int      @id @default(autoincrement())
+  ozn         Int      @default(0) 
   tableId     Int
   oblikIMere  String
   diameter    Float?

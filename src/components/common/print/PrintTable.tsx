@@ -87,7 +87,7 @@ export default function PrintTable({ table, shapeOptions }: PrintTableProps) {
                     </th>
                   </tr>
                   <tr>
-                    {['#','Oblik i Dimenzije Šipke','Prečnik','Dužina','Količina','Ukupno'].map(h => (
+                    {['ozn','Oblik i Dimenzije Šipke','Prečnik','Dužina','Količina','Ukupno'].map(h => (
                       <th
                         key={h}
                         style={{
@@ -108,7 +108,7 @@ export default function PrintTable({ table, shapeOptions }: PrintTableProps) {
                     const ukupno = row.lgn != null ? row.lgn.toFixed(2) : '-';
                     return (
                       <tr key={row.id}>
-                        <td style={td}>{idx + 1}</td>
+                        <td style={td}>{row.ozn}</td>
                         <td style={td}>
                           {row.oblikIMere?.startsWith('extracted_shapes') ? (
                             <img

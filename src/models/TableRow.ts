@@ -1,5 +1,6 @@
 export interface TableRow {
   id: number;
+  ozn: number;
   oblikIMere: string;
   diameter: number | null;
   lg: number | null;

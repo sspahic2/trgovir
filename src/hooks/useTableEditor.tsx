@@ -41,7 +41,8 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
           lg: row.lg ?? null,
           n: row.n ?? null,
           lgn: row.lgn ?? null,
-          position: row.position ?? undefined
+          position: row.position ?? undefined,
+          ozn: row.ozn
       }))
     :
       [
@@ -52,7 +53,8 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
           n: null,
           lgn: null,
           tableId: 0,
-          position: undefined
+          position: undefined,
+          ozn: 0
         },
       ],
   });
@@ -102,6 +104,7 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
       rows: [
         {
           oblikIMere: "",
+          ozn: 1,
           diameter: null,
           lg: null,
           n: null,
@@ -126,7 +129,8 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
           n: null,
           lgn: null,
           tableId: prev.id,
-          position: undefined
+          position: undefined,
+          ozn: prev.rows.length + 1
         },
       ],
     }));

@@ -50,7 +50,8 @@ export const TableRepository = {
             lg: Number(row.lg),
             n: Number(row.n),
             lgn: Number(row.lgn),
-            position: row.position
+            position: row.position,
+            ozn: Number(row.ozn)
           })),
         },
       },
@@ -96,7 +97,8 @@ export const TableRepository = {
             lg: Number(row.lg),
             n: Number(row.n),
             lgn: Number(row.lgn),
-            position: row.position
+            position: row.position,
+            ozn: Number(row.ozn)
           }))
         }
       },

@@ -92,6 +92,7 @@ export default function Label({
         {/* Dimensions */}
         <div className="flex justify-between text-center font-medium text-lg">
           <div>{row.n ?? "-"} Ø {row.diameter ?? "-"}</div>
+          <div>POZ br. {row.ozn}.</div>
           <div>Lg: {row.lg ?? "-"}</div>
         </div>
       </div>

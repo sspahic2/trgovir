@@ -44,8 +44,6 @@ export default function TableCreateContent() {
 
   if (!session?.user?.email || shapeOptions === null) return null;
 
-  console.log({importedRows})
-
   return (
     <TableEditorForm
       mode="create"
