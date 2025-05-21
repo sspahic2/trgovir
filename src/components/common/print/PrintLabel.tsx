@@ -28,7 +28,8 @@ export default function Label({
         <img
           src={`${process.env.NEXT_PUBLIC_FLASK_API ?? ""}${row.oblikIMere}`}
           alt="Oblik i Mere"
-          className="max-h-32 object-contain mx-auto"
+          className="max-h-max object-contain mx-auto"
+          style={{ maxHeight: '3.5cm', minHeight: '2.5cm', flex: '0 0 auto' }}
         />
       );
     }
@@ -72,27 +73,31 @@ export default function Label({
     >
       <div className="flex flex-col justify-between w-full h-full">
         {/* POS */}
-        <div className="text-center text-xs font-bold mb-2">POS: <span className="underline">{row.position}</span></div>
+        <div className="text-center text-xs font-bold" style={{ flex: '0 0 auto' }}>
+          POS: <span className="underline">{row.position}</span>
+        </div>
 
         {/* Shape/Image */}
-        <div className="mb-2">{renderOblikIMere()}</div>
+        <div style={{ maxHeight: '3.5cm', minHeight: '2.5cm', flex: '0 0 auto' }}>
+          {renderOblikIMere()}
+        </div>
 
-        {/* Table info */}
-        <div className="text-xs space-y-1 mb-2 text-center">
+        {/* Text Info */}
+        <div className="text-xs text-center space-y-1 flex-col justify-center items-center flex" style={{ flex: '1 1 auto', maxHeight: '2.5cm' }}>
           <div>KLIJENT: <span className="font-bold underline">{table.client}</span></div>
           <div>ADRESA: <span className="font-bold underline">{table.address}</span></div>
           <div>GRADILIŠTE: <span className="font-bold underline">{table.job}</span></div>
         </div>
 
         {/* Barcode */}
-        <div className="flex justify-center mb-2">
-          <canvas ref={canvasRef} className="max-h-16" />
+        <div style={{ maxHeight: '2cm', flex: '0 0 auto' }} className="flex justify-center">
+          <canvas ref={canvasRef} style={{ maxHeight: '2cm' }} />
         </div>
 
         {/* Dimensions */}
-        <div className="flex justify-between text-center font-medium text-lg">
+        <div className="flex justify-between text-center font-medium text-lg" style={{ flex: '0 0 auto' }}>
           <div>{row.n ?? "-"} Ø {row.diameter ?? "-"}</div>
-          <div>POZ br. {row.ozn}.</div>
+          <div>POZ br. {row.ozn}</div>
           <div>Lg: {row.lg ?? "-"}</div>
         </div>
       </div>
