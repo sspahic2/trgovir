@@ -10,6 +10,13 @@ import PrettyButton from "@/components/common/button/PrettyButton";
 import { PlusCircle, Printer, Table as TableIcon, Trash2 } from "lucide-react";
 import { PrettyModal } from "@/components/common/modal/PrettyModal";
 import PrintModal from "@/components/modal/PrintModal";
+import { TableRow } from "@/models/TableRow";
+
+type GroupedExtracted = {
+  order: number;
+  position: string;
+  rows: TableRow[];
+};
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -84,8 +91,14 @@ export default function Dashboard() {
       return;
     }
 
-    const extractedData = await res.json();
-    sessionStorage.setItem("imported_table_data", JSON.stringify(extractedData));
+    const extractedData = await res.json() as GroupedExtracted[];
+
+    // 🧠 Flatten sorted groups for import preview
+    const flatRows = [...extractedData]
+      .sort((a, b) => a.order - b.order)
+      .flatMap(group => group.rows.map(row => ({ ...row, position: group.position })));
+
+    sessionStorage.setItem("imported_table_data", JSON.stringify(flatRows));
     fileInputRef.current!.value = "";
     setIsImporting(false);
     router.push(`/table/create`);

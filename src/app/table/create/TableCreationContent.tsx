@@ -25,13 +25,7 @@ export default function TableCreateContent() {
       const parsed = JSON.parse(stored);
       sessionStorage.removeItem("imported_table_data");
 
-      const flatRows = !Array.isArray(parsed)
-        ? Object.entries(parsed).flatMap(([position, rows]) =>
-            (rows as any[]).map((row) => ({ ...row, position }))
-          )
-        : parsed;
-
-      setImportedRows(flatRows);
+      setImportedRows(parsed);
     } catch (err) {
       console.error("Failed to parse imported data", err);
     }
