@@ -48,7 +48,7 @@ export default function Dashboard() {
   async function loadMore() {
     if (loading) return;
     setLoading(true);
-    const res = await TableService.getPaginated(page, 10);
+    const res = await TableService.getPaginated(page, 25);
     setTables(prev => [...prev, ...res.items]);
     setTotal(res.total);
     setPage(prev => prev + 1);
@@ -60,7 +60,7 @@ export default function Dashboard() {
     setPage(1);
     setTotal(0);
     setLoading(true);
-    const res = await TableService.getPaginated(1, 10);
+    const res = await TableService.getPaginated(1, 25);
     setTables(res.items);
     setTotal(res.total);
     setPage(2);
@@ -72,44 +72,71 @@ export default function Dashboard() {
   }
 
   async function handleFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
 
     setIsImporting(true);
-    const formData = new FormData();
-    formData.append("file", file);
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_FLASK_API}extract-preview`, {
-      method: "POST",
-      body: formData,
-      credentials: "include",
-    });
+    const BATCH_SIZE = 2;
 
-    if (!res.ok) {
-      console.error("Failed to extract");
+    const fetchFile = async (file: File, index: number): Promise<{ index: number; data: GroupedExtracted[] }> => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_FLASK_API}extract-preview`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error(`Failed for file ${file.name}`);
+      const data: GroupedExtracted[] = await res.json();
+      return { index, data };
+    };
+
+    const results: { index: number; data: GroupedExtracted[] }[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i += BATCH_SIZE) {
+        const batch = files.slice(i, i + BATCH_SIZE);
+
+        const batchResults = await Promise.all(
+          batch.map((file, offset) => fetchFile(file, i + offset))
+        );
+
+        results.push(...batchResults);
+      }
+
+      const successfulResults = results
+        .sort((a, b) => a.index - b.index);
+
+      const flatRows = successfulResults.flatMap(({ data }) =>
+        data
+          .sort((a, b) => a.order - b.order)
+          .flatMap(group =>
+            group.rows.map(row => ({
+              ...row,
+              position: group.position,
+            }))
+          )
+      );
+
+      sessionStorage.setItem("imported_table_data", JSON.stringify(flatRows));
+      fileInputRef.current!.value = "";
+      router.push(`/table/create`);
+    } catch (error) {
+      console.error("Multi-file import failed:", error);
+    } finally {
       setIsImporting(false);
-      return;
     }
-
-    const extractedData = await res.json() as GroupedExtracted[];
-
-    // 🧠 Flatten sorted groups for import preview
-    const flatRows = [...extractedData]
-      .sort((a, b) => a.order - b.order)
-      .flatMap(group => group.rows.map(row => ({ ...row, position: group.position })));
-
-    sessionStorage.setItem("imported_table_data", JSON.stringify(flatRows));
-    fileInputRef.current!.value = "";
-    setIsImporting(false);
-    router.push(`/table/create`);
   }
-
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <input
         ref={fileInputRef}
         type="file"
+        multiple
         accept="application/pdf"
         style={{ display: "none" }}
         onChange={handleFileSelected}
