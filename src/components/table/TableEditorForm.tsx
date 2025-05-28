@@ -67,6 +67,7 @@ export default function TableEditorForm({
 
   // index of row currently picking a shape
   const [pickingRowIndex, setPickingRowIndex] = useState<number | null>(null);
+  const [editedPositions, setEditedPositions] = useState<Record<string, string>>({});
   
   const {
     shapeRefs,
@@ -130,12 +131,14 @@ export default function TableEditorForm({
     row: number,
     key: string
   ) => {
-    if (e.ctrlKey && e.key === "ArrowLeft") {
-      handleShapeKeyDown(e, row, key);
-    }
-    else {
-      handleKeyDown(e, row, key as unknown as number);
-    }
+    // if (e.ctrlKey && e.key === "ArrowLeft") {
+    //   handleShapeKeyDown(e, row, key);
+    // }
+    // else {
+    //   handleKeyDown(e, row, key as unknown as number);
+    // }
+
+    handleKeyDown(e, row, key as unknown as number);
   }
 
   useEffect(() => {
@@ -231,9 +234,60 @@ export default function TableEditorForm({
       {
         groupingByPosition.map(([position, rows], groupIdx) => (
           <div key={position} className="mb-6">
-            <h2 className="text-lg font-bold mb-2">
-              {position}
-            </h2>
+            <input
+                className="
+                text-lg font-bold mb-2 bg-transparent border-none p-0 m-0
+                focus:outline-none focus:border-b focus:border-blue-400
+                hover:bg-white hover:cursor-text transition
+                "
+                style={{
+                  width: `${Math.min((editedPositions[position] ?? position).length + 1, 60)}ch`
+                }}
+                value={editedPositions[position] ?? position}
+                onChange={(e) =>
+                  setEditedPositions((prev) => ({ ...prev, [position]: e.target.value }))
+                }
+              />
+
+              {editedPositions[position] !== undefined &&
+                editedPositions[position] !== position && (
+                  <div className="inline-flex items-center gap-1">
+                    <PrettyButton
+                      color="green"
+                      className="w-8 h-8 p-1 text-green-600 hover:text-white"
+                      onClick={() => {
+                        const newVal = editedPositions[position];
+                        setEditedPositions((prev) => {
+                          const updated = { ...prev };
+                          delete updated[position];
+                          return updated;
+                        });
+
+                        table.rows.forEach((row, i) => {
+                          if (row.position === position) {
+                            updateRow(i, "position", newVal);
+                          }
+                        });
+                      }}
+                    >
+                      ✔
+                    </PrettyButton>
+
+                    <PrettyButton
+                      color="red"
+                      className="w-8 h-8 p-1"
+                      onClick={() =>
+                        setEditedPositions((prev) => {
+                          const updated = { ...prev };
+                          delete updated[position];
+                          return updated;
+                        })
+                      }
+                    >
+                      X
+                    </PrettyButton>
+                  </div>
+                )}
             <table
               className="w-full border border-gray-300"
               style={{ display: 'grid', gridTemplateColumns: '1fr 3fr 1fr 1fr 1fr 1fr 1fr' }}
