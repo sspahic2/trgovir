@@ -235,11 +235,7 @@ export default function TableEditorForm({
         groupingByPosition.map(([position, rows], groupIdx) => (
           <div key={position} className="mb-6">
             <input
-                className="
-                text-lg font-bold mb-2 bg-transparent border-none p-0 m-0
-                focus:outline-none focus:border-b focus:border-blue-400
-                hover:bg-white hover:cursor-text transition
-                "
+                className="border-white border-2 text-lg font-bold mb-2 bg-transparent rounded focus:border-2 hover:border-2 p-0 m-0 focus:outline-none focus:border-blue-400 hover:bg-white hover:cursor-text transition focus:bg-white hover:border-gray-300"
                 style={{
                   width: `${Math.min((editedPositions[position] ?? position).length + 1, 60)}ch`
                 }}
