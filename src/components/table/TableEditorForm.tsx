@@ -15,9 +15,9 @@ import type { ShapeConfiguration, ShapeType } from "@/models/ShapeConfiguration"
 import ShapeCard from "../shape/ShapeCard";
 import { parseGeneralConfig, parseInputValues } from "@/lib/parser/parseShapeConfig";
 import ShapeCanvas from "../shape/ShapeCanvas";
-import { useShapeInputRefs } from "@/hooks/useShapeInputRefs";
 import { TableRow } from "@/models/TableRow";
 import { Table } from "@/models/Table";
+import { useInputRefs } from "@/hooks/useInputRefs";
 
 interface TableEditorFormProps {
   mode: 'create' | 'update';
@@ -38,29 +38,24 @@ export default function TableEditorForm({
   onCancel,
   initialTable,
   userEmail,
-  shapeOptions,
   importedRows
 }: TableEditorFormProps) {
   const router = useRouter();
   const {
     table,
     updateTableField,
+    groupingByPosition,
     isSaving,
     setSaving,
     saved,
     setSavedStatus,
     isSuperAdmin,
     markAsSuperAdmin,
-    nextFocusRef,
     addRow,
     deleteRow,
     updateRow,
-    handleKeyDown,
+    updatePositionForGroup,
     resetEditor,
-    setExistingTable,
-    inputRefs,
-    rowInputs,
-    setInputValue,
     handleSave: handleSaveHook
   } = useTableEditor({  initialTable,
     initialImportedRows: importedRows});
@@ -70,95 +65,9 @@ export default function TableEditorForm({
   const [editedPositions, setEditedPositions] = useState<Record<string, string>>({});
   
   const {
-    shapeRefs,
-    setRef: setShapeInputRef,
-    handleKeyDown: rawHandleShapeKeyDown
-  } = useShapeInputRefs();
-  
-  const handleShapeKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    row: number,
-    key: string
-  ) => {
-    // First: try to move inside shape
-    const moved = rawHandleShapeKeyDown(e, row, key);
-    if (moved) return;
-  
-    // Then: special Ctrl cases
-    if (e.ctrlKey && e.key === "ArrowLeft") {
-      e.preventDefault();
-  
-      // Jump to rightmost slot in the shape's grid
-      const slotMap = shapeRefs.current[row];
-
-      if (slotMap) {
-        const keys = Object.keys(slotMap).filter(k => k.includes("-"));
-        // Sort to get the rightmost slot: prioritize highest x, then highest y
-        const sorted = keys.sort((a, b) => {
-          const [ax, ay] = a.split("-").map(Number);
-          const [bx, by] = b.split("-").map(Number);
-          // Prioritize right side (x=1), then highest y
-          if (ax !== bx) return bx - ax; // Higher x first (right side)
-          return by - ay; // Then higher y
-        });
-  
-        const rightmostKey = sorted[0]; // e.g., "1-4" for right side, position 4
-        const rightmostSlot = slotMap[rightmostKey];
-        if (rightmostSlot) {
-          rightmostSlot.focus();
-          return;
-        }
-      }
-    }
-  
-    if (e.ctrlKey && e.key === "ArrowRight") {
-      e.preventDefault();
-      // Ø column is inputRefs[row][1]
-      inputRefs.current[row]?.[1]?.focus();
-      return;
-    }
-  
-    // Final fallback (optional)
-    if (e.key === "ArrowLeft") {
-      inputRefs.current[row]?.[0]?.focus(); // Shape column
-    } else if (e.key === "ArrowRight") {
-      inputRefs.current[row]?.[1]?.focus(); // Ø column
-    }
-  };
-
-  const handleKeyCustom = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    row: number,
-    key: string
-  ) => {
-    // if (e.ctrlKey && e.key === "ArrowLeft") {
-    //   handleShapeKeyDown(e, row, key);
-    // }
-    // else {
-    //   handleKeyDown(e, row, key as unknown as number);
-    // }
-
-    handleKeyDown(e, row, key as unknown as number);
-  }
-
-  useEffect(() => {
-    if (mode === "update" && initialTable) {
-      setExistingTable({
-        ...initialTable,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-  
-      // 🧠 Parse inputs=... from existing shapes
-      initialTable.rows.forEach((row, i) => {
-        if (!row.oblikIMere) return;
-        const parsedInputs = parseInputValues(row.oblikIMere);
-        Object.entries(parsedInputs).forEach(([key, val]) => {
-          setInputValue(i, key, val);
-        });
-      });
-    }
-  }, [initialTable]);
+    setTableRef,
+    handleTableKeyDown,
+  } = useInputRefs();
 
   useEffect(() => {
     EmailService.isSuperAdmin(userEmail).then(res => {
@@ -170,7 +79,7 @@ export default function TableEditorForm({
   const handleSave = async () => {
     try {
       const rows = await handleSaveHook(); // renamed for clarity
-      await onSave(table, rows);
+      await onSave({ ...table, updatedAt: new Date() }, rows);
       setSavedStatus(true);
 
       if (mode === "create") resetEditor();
@@ -183,17 +92,6 @@ export default function TableEditorForm({
   };
 
   if (!isSuperAdmin) return null;
-
-  let groupingByPosition = Object.entries(
-    table.rows.reduce((acc, row) => {
-      const key = row.position || "Unspecified";
-
-      if(!acc[key]) acc[key] = [];
-
-      acc[key].push(row);
-      return acc;
-    }, {} as Record<string, typeof table.rows>)
-  );
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -232,7 +130,7 @@ export default function TableEditorForm({
         </div>
       </div>
       {
-        groupingByPosition.map(([position, rows], groupIdx) => (
+        groupingByPosition.map(({ position, rows, positionIndex }) => (
           <div key={position} className="mb-6">
             <input
                 className="border-white border-2 text-lg font-bold mb-2 bg-transparent rounded focus:border-2 hover:border-2 p-0 m-0 focus:outline-none focus:border-blue-400 hover:bg-white hover:cursor-text transition focus:bg-white hover:border-gray-300"
@@ -259,11 +157,7 @@ export default function TableEditorForm({
                           return updated;
                         });
 
-                        table.rows.forEach((row, i) => {
-                          if (row.position === position) {
-                            updateRow(i, "position", newVal);
-                          }
-                        });
+                        updatePositionForGroup(position, newVal);
                       }}
                     >
                       ✔
@@ -335,25 +229,16 @@ export default function TableEditorForm({
                               const squareProps = shapeType === 'SquareWithTail' ? parsed as SquareWithTailProps : {};
                               const lineProps = shapeType === 'Line' ? parsed as LineShapeProps : {};
                               const connectedProps = shapeType === 'ConnectingLines' ? parsed as ConnectedLinesShapeProps : {};
-
                               return (
-                                <ShapeCanvas
-                                  shapeType={shapeType}
-                                  mode="input"
-                                  squareProps={squareProps}
-                                  lineProps={lineProps}
-                                  connectedProps={connectedProps}
-                                  selectedCoords={shapeOptions.find(s => s.configuration === row.oblikIMere)?.selectedCoords ?? []}
-                                  onToggleCoord={() => {}}
-                                  width={200}
-                                  height={200}
-                                  rowIndex={index}
-                                  handleShapeKeyDown={handleShapeKeyDown}
-                                  setShapeInputRef={setShapeInputRef}
-                                  rowInputs={rowInputs}
-                                  setInputValue={setInputValue}
-                                />
-                              );
+                                <></>
+                              )
+                              // return (
+                              //   <ShapeCanvas
+                              //     mode="input"
+                              //     width={200}
+                              //     height={200}
+                              //   />
+                              // );
                             })()
                           }
                         </div>
@@ -368,45 +253,45 @@ export default function TableEditorForm({
                       )}
                     </td>
 
-                    <td className="border px-2 py-1">
+                    <td className="flex border px-2 py-1">
                       <PrettyInput
                         type="number"
                         value={row.diameter ?? ""}
-                        onChange={e => updateRow(index, "diameter", e.target.value)}
-                        ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][1] = el!; }}
-                        onKeyDown={e => handleKeyCustom(e, index, '1')}
+                        onChange={e => updateRow(position, index, { diameter: parseFloat(e.target.value?.trim() || '0') })}
+                        ref={(el) => setTableRef(position, index, 1, el!)}
+                        onKeyDown={(e) => handleTableKeyDown(e, positionIndex, index, 1, groupingByPosition.length)}
                       />
                     </td>
-                    <td className="border px-2 py-1">
+                    <td className="flex border px-2 py-1">
                       <PrettyInput
                         type="number"
                         value={row.lg ?? ""}
-                        onChange={e => updateRow(index, "lg", e.target.value)}
-                        ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][2] = el!; }}
-                        onKeyDown={e => handleKeyCustom(e, index, '2')}
+                        onChange={e => updateRow(position, index, { lg: parseFloat(e.target.value?.trim() || '0') })}
+                        ref={(el) => setTableRef(position, index, 2, el!)}
+                        onKeyDown={(e) => handleTableKeyDown(e, positionIndex, index, 2, groupingByPosition.length)}
                       />
                     </td>
-                    <td className="border px-2 py-1">
+                    <td className="flex border px-2 py-1">
                       <PrettyInput
                         type="number"
                         value={row.n ?? ""}
-                        onChange={e => updateRow(index, "n", e.target.value)}
-                        ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][3] = el!; }}
-                        onKeyDown={e => handleKeyCustom(e, index, '3')}
+                        onChange={e => updateRow(position, index, { n: parseFloat(e.target.value?.trim() || '0') })}
+                        ref={(el) => setTableRef(position, index, 3, el!)}
+                        onKeyDown={(e) => handleTableKeyDown(e, positionIndex, index, 3, groupingByPosition.length)}
                       />
                     </td>
-                    <td className="border px-2 py-1">
+                    <td className="flex border px-2 py-1">
                       <PrettyInput
                         type="number"
                         value={row.lgn ?? ""}
-                        onChange={e => updateRow(index, "lgn", e.target.value)}
-                        ref={el => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][4] = el!; }}
-                        onKeyDown={e => handleKeyCustom(e, index, '4')}
+                        onChange={e => updateRow(position, index, { lgn: parseFloat(e.target.value?.trim() || '0') })}
+                        ref={(el) => setTableRef(position, index, 4, el!)}
+                        onKeyDown={(e) => handleTableKeyDown(e, positionIndex, index, 4, groupingByPosition.length)}
                       />
                     </td>
                     <td className="border px-2 py-1">
                       <button
-                        onClick={() => deleteRow(index)}
+                        onClick={() => deleteRow(position, index)}
                         className="w-full h-full flex items-center justify-center cursor-pointer"
                       >
                         <Trash2 size={18} className="text-red-500" />
@@ -420,56 +305,13 @@ export default function TableEditorForm({
         ))
       }
 
-      <PrettyButton
+      {/* <PrettyButton
         onClick={addRow}
         className="w-full mt-2 flex justify-center items-center gap-2"
         color="blue"
       >
         <PlusCircle size={18} />
-      </PrettyButton>
-
-      {/* --- Sidebar overlay --- */}
-      <div className="absolute top-10 right-0 bottom-0">
-        <PrettySidebar
-          isOpen={pickingRowIndex !== null}
-          onToggle={() => setPickingRowIndex(null)}
-          toggleAsButton={true}
-        >
-          <h2 className="text-lg font-semibold mb-4">Choose Shape</h2>
-          <div className="flex flex-col gap-4 justify-center items-center">
-            {shapeOptions.map((opt) => {
-              const shapeType = opt.configuration.split(";")[0] as ShapeType;
-              const parsed = parseGeneralConfig(opt.configuration);
-              const squareProps = shapeType === 'SquareWithTail' ? parsed as SquareWithTailProps : undefined;
-              const lineProps = shapeType === 'Line' ? parsed as LineShapeProps : undefined;
-              const connectedProps = shapeType === 'ConnectingLines' ? parsed as ConnectedLinesShapeProps : undefined;
-              const isSelected = pickingRowIndex !== null && table.rows[pickingRowIndex]?.oblikIMere === opt.configuration;
-
-              return (
-                <ShapeCard
-                  key={opt.id}
-                  selected={isSelected}
-                  shapeType={shapeType}
-                  mode="view"
-                  squareProps={squareProps}
-                  lineProps={lineProps}
-                  connectedProps={connectedProps}
-                  selectedCoords={opt.selectedCoords}
-                  onClick={() => {
-                    updateRow(pickingRowIndex!, 'oblikIMere', opt.configuration);
-                    opt.selectedCoords.forEach(coord => {
-                      const key = `${coord.x}-${coord.y}`;
-                      setInputValue(pickingRowIndex!, key, 0);
-                    });
-                    
-                    setPickingRowIndex(null);
-                  }}
-                />
-              );
-            })}
-          </div>
-        </PrettySidebar>
-      </div>
+      </PrettyButton> */}
     </div>
   );
 }

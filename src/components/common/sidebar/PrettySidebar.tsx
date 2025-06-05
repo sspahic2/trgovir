@@ -15,6 +15,7 @@ interface PrettySidebarProps {
   toggleAsButton?: boolean;
   /** color of the X-button (red, green, blue) */
   buttonColor?: 'red' | 'green' | 'blue';
+  className?: string;
 }
 
 export default function PrettySidebar({
@@ -22,15 +23,17 @@ export default function PrettySidebar({
   onToggle,
   children,
   toggleAsButton = false,
-  buttonColor = 'red'
+  buttonColor = 'red',
+  className = '',
+  ...props
 }: PrettySidebarProps) {
   // if using button-as-toggle and closed, unmount entirely
   if (toggleAsButton && !isOpen) return null;
 
   return (
     <div
-      className={`transition-all duration-300 ease-in-out bg-gray-100 border-l h-full relative flex flex-col ${
-        isOpen ? 'w-96' : 'w-10 items-center justify-center'
+      className={`transition-all duration-300 ease-in-out border-l h-full relative flex flex-col ${className}  ${
+        isOpen ? 'w-96' : 'w-10 items-center justify-center '
       }`}
     >
       {toggleAsButton ? (
@@ -41,7 +44,7 @@ export default function PrettySidebar({
             onClick={onToggle}
             className="p-1 w-8 h-8 flex items-center justify-center"
           >
-            ×
+            X
           </PrettyButton>
         </div>
       ) : (
@@ -54,7 +57,7 @@ export default function PrettySidebar({
         </button>
       )}
 
-      {isOpen && <div className="p-4 overflow-auto w-full">{children}</div>}
+      {isOpen && <div className={`p-4 overflow-auto w-full ${className}`} {...props}>{children}</div>}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { JSX, useEffect, useRef } from 'react';
+import SkeletonRows from '@/components/common/skeleton/SkeletonRows';
 
 interface InfiniteScrollerProps<T> {
   items: T[];
@@ -17,7 +18,7 @@ export default function InfiniteScroller<T>({
   hasMore,
   loading = false,
 }: InfiniteScrollerProps<T>) {
-  const loaderRef = useRef<HTMLDivElement | null>(null);
+  const loaderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -39,8 +40,8 @@ export default function InfiniteScroller<T>({
     <div>
       {items.map((item, index) => renderItem(item, index))}
 
-      <div ref={loaderRef} className="text-center py-4 text-gray-500">
-        {loading ? 'Loading...'  : ''}
+      <div ref={loaderRef} className="max-h-32">
+        {loading && <SkeletonRows />}
       </div>
     </div>
   );

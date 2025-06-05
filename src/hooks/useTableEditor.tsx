@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import {
   serializeSquareConfig,
   serializeLineConfig,
@@ -26,55 +26,63 @@ interface UseTableEditorParams {
 }
 
 export function useTableEditor({ initialTable, initialImportedRows }: UseTableEditorParams) {
-  const [name, setName] = useState(initialTable?.name || '');
-  const [table, _setTable] = useState<EditableTable>({
-    id: 0,
-    name: "New Table",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    rows: initialImportedRows ? 
-      initialImportedRows.map((row, index) => ({
-          tableId: 0,
-          // adapt based on your table shape
-          oblikIMere: row.oblikIMere,
-          diameter: row.diameter ?? null,
-          lg: row.lg ?? null,
-          n: row.n ?? null,
-          lgn: row.lgn ?? null,
-          position: row.position ?? undefined,
-          ozn: row.ozn
-      }))
+  const [table, _setTable] = useState<EditableTable>(
+    initialTable ?
+    { createdAt: new Date(), updatedAt: new Date(), ...initialTable}
     :
-      [
-        {
-          oblikIMere: "",
-          diameter: null,
-          lg: null,
-          n: null,
-          lgn: null,
-          tableId: 0,
-          position: undefined,
-          ozn: 0
-        },
-      ],
-  });
+    {
+      id: 0,
+      name: "New Table",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      rows: initialImportedRows ? 
+        initialImportedRows.map((row, index) => ({
+            tableId: 0,
+            // adapt based on your table shape
+            oblikIMere: row.oblikIMere,
+            diameter: row.diameter ?? null,
+            lg: row.lg ?? null,
+            n: row.n ?? null,
+            lgn: row.lgn ?? null,
+            position: row.position ?? undefined,
+            ozn: row.ozn
+        }))
+      :
+        [
+          {
+            oblikIMere: "",
+            diameter: null,
+            lg: null,
+            n: null,
+            lgn: null,
+            tableId: 0,
+            position: undefined,
+            ozn: 0
+          },
+        ]
+    }
+  );
+  const groupingByPositionGenerator = (rows: EditableRow[]) => {
+    return Object.entries(
+      rows.reduce((acc, row) => {
+        const key = row.position || "Unspecified";
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(row);
+        return acc;
+      }, {} as Record<string, typeof table.rows>)
+    ).map(([position, rows], idx) => ({
+      position,
+      rows,
+      positionIndex: idx,
+    }));
+  }
+
+  const groupingByPosition = useMemo(() => groupingByPositionGenerator(table.rows), [table.rows]);
+
 
   const [isSaving, _setIsSaving] = useState(false);
   const [saved, _setSaved] = useState(false);
   const [isSuperAdmin, _setIsSuperAdmin] = useState(false);
-  const nextFocusRef = useRef<HTMLInputElement>(null);
-  const inputRefs = useRef<HTMLInputElement[][]>([]);
-
-  const [rowInputs, setRowInputs] = useState<Record<number, Record<string, number>>>({});
-  const setInputValue = (rowIndex: number, key: string, value: number) => {
-    setRowInputs((prev) => ({
-      ...prev,
-      [rowIndex]: {
-        ...prev[rowIndex],
-        [key]: value,
-      },
-    }));
-  };
 
   const handleSave = async (): Promise<EditableRow[]> => {
     if (!table.name.trim()) throw new Error("Table name is required");
@@ -83,7 +91,6 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
     setSavedStatus(false);
   
     const rows = finalizeRowsForSave();
-  
     return rows;
   };
 
@@ -136,168 +143,55 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
     }));
   }, []);
 
-  const deleteRow = useCallback((index: number) => {
-    _setTable((prev) => ({
-      ...prev,
-      rows: prev.rows.filter((_, i) => i !== index),
-    }));
+  const deleteRow = useCallback((position: string, indexInGroup: number) => {
+    _setTable(prev => {
+      let groupIndex = -1;
+      return {
+        ...prev,
+        rows: prev.rows.filter(row => {
+          if ((row.position || "Unspecified") === position) {
+            groupIndex += 1;
+            if (groupIndex === indexInGroup) return false;
+          }
+          return true;
+        }),
+      };
+    });
   }, []);
 
-  const updateRow = useCallback(
-    (index: number, field: keyof EditableRow, value: string | number) => {
-      _setTable((prev) => {
-        const currentValue = prev.rows[index]?.[field];
-        const parsedValue =
-          value === "" ? null : typeof value === "string" ? value : Number(value);
+  const updateRow = useCallback((position: string, indexInGroup: number, updatedFields: Partial<TableRow>) => {
+    _setTable(prev => {
+      let groupIndex = -1;
+      return {
+        ...prev,
+        rows: prev.rows.map(row => {
+          if ((row.position || "Unspecified") === position) {
+            groupIndex += 1;
+            if (groupIndex === indexInGroup) {
+              return { ...row, ...updatedFields };
+            }
+          }
+          return row;
+        }),
+      };
+    });
+  }, []);
 
-        if (currentValue === parsedValue) return prev;
-
-        const updatedRows = prev.rows.map((row, i) =>
-          i !== index
-            ? row
-            : {
-                ...row,
-                [field]: parsedValue,
-              }
-        );
-
-        return {
-          ...prev,
-          rows: updatedRows,
-        };
-      });
-    },
-    []
-  );
-
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    row: number,
-    col: number
-  ) => {
-    const maxRow = table.rows.length;
-    const maxCol = 4;
-
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "a") {
-      e.preventDefault();
-      addRow();
-      setTimeout(() => {
-        inputRefs.current[maxRow]?.[0]?.focus();
-      }, 50);
-      return;
-    }
-
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "d") {
-      e.preventDefault();
-      deleteRow(row);
-      setTimeout(() => {
-        const next = Math.min(row, table.rows.length - 1);
-        inputRefs.current[next]?.[col]?.focus();
-      }, 50);
-      return;
-    }
-
-    if (e.key === "Delete") {
-      e.preventDefault();
-      deleteRow(row);
-      setTimeout(() => {
-        const next = Math.min(row, table.rows.length - 1);
-        inputRefs.current[next]?.[col]?.focus();
-      }, 50);
-      return;
-    }
-
-    if (e.key === "Backspace") {
-      return;
-    }
-
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addRow();
-      setTimeout(() => {
-        inputRefs.current[row + 1]?.[col]?.focus();
-      }, 50);
-      return;
-    }
-
-    if (e.key === "Tab") {
-      e.preventDefault();
-      const nextCol = col + 1;
-      if (nextCol <= maxCol) {
-        inputRefs.current[row]?.[nextCol]?.focus();
-      } else {
-        addRow();
-        setTimeout(() => {
-          inputRefs.current[row + 1]?.[0]?.focus();
-        }, 50);
-      }
-      return;
-    }
-
-    if (e.ctrlKey) {
-      e.preventDefault();
-      switch (e.key) {
-        case "ArrowUp":
-          inputRefs.current[0]?.[col]?.focus();
-          return;
-        case "ArrowDown":
-          inputRefs.current[maxRow - 1]?.[col]?.focus();
-          return;
-        case "ArrowRight":
-          inputRefs.current[row]?.[maxCol]?.focus();
-          return;
-      }
-    }
-
-    switch (e.key) {
-      case "ArrowUp":
-        e.preventDefault();
-        inputRefs.current[Math.max(0, row - 1)]?.[col]?.focus();
-        break;
-      case "ArrowDown":
-        e.preventDefault();
-        inputRefs.current[Math.min(maxRow - 1, row + 1)]?.[col]?.focus();
-        break;
-      case "ArrowLeft":
-        e.preventDefault();
-        inputRefs.current[row]?.[Math.max(0, col - 1)]?.focus();
-        break;
-      case "ArrowRight":
-        e.preventDefault();
-        inputRefs.current[row]?.[Math.min(maxCol, col + 1)]?.focus();
-        break;
-      default:
-        return;
-    }
-  };
-
-  const setExistingTable = (existing: EditableTable) => {
-    _setTable(existing);
-  };
+  const updatePositionForGroup = useCallback((oldPosition: string, newPosition: string) => {
+    _setTable(prev => {
+      // Update all rows in prev.rows that match oldPosition
+      return {
+        ...prev,
+        rows: prev.rows.map(row =>
+          row.position === oldPosition ? { ...row, position: newPosition } : row
+        ),
+      };
+    });
+  }, []);
 
   // ✅ this is used during save()
   const finalizeRowsForSave = (): EditableRow[] => {
-    return table.rows.map((row, index) => {
-      const shapeType = row.oblikIMere?.split(";")[0];
-      const parsed = parseGeneralConfig(row.oblikIMere || "");
-      const inputs = rowInputs[index] || {};
-      let base = row.oblikIMere || "";
-
-      if(parsed == "Invalid") {
-
-      } else if (shapeType === "SquareWithTail") {
-        base = serializeSquareConfig(parsed);
-      } else if (shapeType === "Line") {
-        base = serializeLineConfig(parsed);
-      } else if (shapeType === "ConnectingLines") {
-        base = serializeConnectedLinesConfig(parsed);
-      }
-
-      return {
-        ...row,
-        oblikIMere: serializeShapeWithInputs(base, inputs),
-      };
-    });
+    return table.rows;
   };
 
   return {
@@ -305,8 +199,7 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
     isSaving,
     saved,
     isSuperAdmin,
-    nextFocusRef,
-    inputRefs,
+    groupingByPosition,
 
     updateTableField,
     setSaving,
@@ -317,13 +210,9 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
     addRow,
     deleteRow,
     updateRow,
-    handleKeyDown,
-    setExistingTable,
+    updatePositionForGroup,
 
-    // ✅ added:
-    setInputValue,
     finalizeRowsForSave,
-    rowInputs,
     handleSave
   };
 }

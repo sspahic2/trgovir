@@ -164,7 +164,7 @@ export default function Dashboard() {
       </h1>
 
       <div className="border rounded-lg overflow-hidden shadow">
-        <div className="bg-gray-100 px-4 py-2 font-medium text-sm grid grid-cols-[40px_1fr_140px_80px]">
+        <div className="bg-gray-100 px-4 py-2 font-medium text-sm grid grid-cols-[40px_1fr_160px_80px]">
           <div>#</div>
           <div>Name</div>
           <div>Created</div>
@@ -179,7 +179,7 @@ export default function Dashboard() {
           renderItem={(item, index) => (
             <div
               key={item.id}
-              className="px-4 py-2 border-t text-sm grid grid-cols-[40px_1fr_140px_80px] items-center hover:bg-gray-200 transition group"
+              className="px-4 py-2 border-t text-sm grid grid-cols-[40px_1fr_160px_80px] items-center hover:bg-gray-200 transition group"
             >
               <div>{index + 1}</div>
               <div

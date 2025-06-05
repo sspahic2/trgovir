@@ -42,4 +42,5 @@ next-env.d.ts
 
 #context
 fullcode.txt
+*.zip
 .vercel

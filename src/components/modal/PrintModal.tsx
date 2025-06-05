@@ -11,7 +11,7 @@ export default function PrintModal({
   onClose: () => void;
 }) {
   const openInNewTab = (layout: string) => {
-    window.open(`/table/print/${tableId}?layout=${layout}`, "_blank");
+    window.open(`/table/print/${tableId}?layout=${layout}`, "_blank", 'noopener,noreferrer');
     onClose(); // close modal after triggering
   };
 
