@@ -8,7 +8,7 @@ export interface Coordinate {
   y: number;
 }
 
-export type ShapeType = 'SquareWithTail' | 'Line' | 'ConnectingLines';
+export type ShapeType = 'SquareWithTail' | 'Line' | 'ConnectingLines' | 'SquareWithTwoTail' | 'SquareWithTwoTailDouble';
 export type CanvasMode = 'view' | 'edit' | 'input';
 /**
  * Represents a saved shape configuration
@@ -20,4 +20,5 @@ export interface ShapeConfiguration {
   configuration: string;
   /** Which checkboxes were selected */
   selectedCoords: Coordinate[];
+  title?: string;
 }

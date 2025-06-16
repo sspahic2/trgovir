@@ -3,21 +3,17 @@
 import React, { useEffect, useState } from "react";
 import PrettyInput from "@/components/common/input/PrettyInput";
 import PrettyButton from "@/components/common/button/PrettyButton";
-import PrettySidebar from "@/components/common/sidebar/PrettySidebar";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { EditableTable, useTableEditor } from "@/hooks/useTableEditor";
 import { EmailService } from "@/services/email.service";
 import { useRouter } from "next/navigation";
-import SquareWithTailShape, { SquareWithTailProps } from "@/components/shape/SquareWithTail";
-import LineShape, { LineShapeProps } from "@/components/shape/Line";
-import ConnectedLinesShape, { ConnectedLinesShapeProps } from "@/components/shape/ConnectingLines";
 import type { ShapeConfiguration, ShapeType } from "@/models/ShapeConfiguration";
-import ShapeCard from "../shape/ShapeCard";
-import { parseGeneralConfig, parseInputValues } from "@/lib/parser/parseShapeConfig";
 import ShapeCanvas from "../shape/ShapeCanvas";
 import { TableRow } from "@/models/TableRow";
 import { Table } from "@/models/Table";
 import { useInputRefs } from "@/hooks/useInputRefs";
+import { useShapePickerSidebar } from "@/hooks/useShapePickerSidebar";
+import ShapeSearchableSidebar from "../shape/ShapeSearchableSidebar";
 
 interface TableEditorFormProps {
   mode: 'create' | 'update';
@@ -38,8 +34,10 @@ export default function TableEditorForm({
   onCancel,
   initialTable,
   userEmail,
+  shapeOptions,
   importedRows
 }: TableEditorFormProps) {
+
   const router = useRouter();
   const {
     table,
@@ -60,14 +58,21 @@ export default function TableEditorForm({
   } = useTableEditor({  initialTable,
     initialImportedRows: importedRows});
 
-  // index of row currently picking a shape
-  const [pickingRowIndex, setPickingRowIndex] = useState<number | null>(null);
   const [editedPositions, setEditedPositions] = useState<Record<string, string>>({});
   
   const {
     setTableRef,
     handleTableKeyDown,
-  } = useInputRefs();
+
+    handleShapeKeyDown,
+    setShapeRef,
+
+    rowInputs,
+    setInputValue,
+    renameRowKey
+  } = useInputRefs(groupingByPosition, shapeOptions);
+
+  const shapeSidebar = useShapePickerSidebar();
 
   useEffect(() => {
     EmailService.isSuperAdmin(userEmail).then(res => {
@@ -78,7 +83,7 @@ export default function TableEditorForm({
 
   const handleSave = async () => {
     try {
-      const rows = await handleSaveHook(); // renamed for clarity
+      const rows = await handleSaveHook(rowInputs); // renamed for clarity
       await onSave({ ...table, updatedAt: new Date() }, rows);
       setSavedStatus(true);
 
@@ -94,6 +99,7 @@ export default function TableEditorForm({
   if (!isSuperAdmin) return null;
 
   return (
+    <>
     <div className="p-8 max-w-6xl mx-auto">
       {/* Metadata input fields */}
       <div className="grid grid-cols-3 gap-4 mb-4 max-w-6xl">
@@ -196,7 +202,21 @@ export default function TableEditorForm({
               <tbody style={{ display: 'contents' }}>
                 {rows.map((row, index) => (
                   <tr key={index} style={{ display: 'contents' }}>
-                    <td className="border px-2 py-1 text-center">{row.ozn}</td>
+                    <td className="flex border px-2 py-1">
+                      <PrettyInput
+                        type="number"
+                        value={row.ozn ?? ""}
+                        onChange={e => {
+                          const newOzn = parseFloat(e.target.value.trim() || '0');
+                          const oldKey = `${position}-${index}-${row.ozn}`;
+                          const newKey = `${position}-${index}-${newOzn}`;
+                          renameRowKey(oldKey, newKey);   // from useInputRefs
+                          updateRow(position, index, { ozn: newOzn });  // from useTableEditor
+                        }}
+                        ref={(el) => setTableRef(position, index, 0, el!)}
+                        onKeyDown={(e) => handleTableKeyDown(e, positionIndex, index, 0, groupingByPosition.length)}
+                      />
+                    </td>
 
                     <td className="border px-2 py-1">
                       {row.oblikIMere ? (
@@ -204,8 +224,6 @@ export default function TableEditorForm({
                           className="flex justify-center items-center cursor-pointer"
                           onClick={() => {
                             if(row.oblikIMere.startsWith("extracted_shapes")) return;
-
-                            setPickingRowIndex(index)
                           }}
                         >
                           {
@@ -223,22 +241,21 @@ export default function TableEditorForm({
                             :
                
                             (() => {
-                              const shapeType = row.oblikIMere.split(';')[0] as ShapeType;
-                              const parsed = parseGeneralConfig(row.oblikIMere);
-
-                              const squareProps = shapeType === 'SquareWithTail' ? parsed as SquareWithTailProps : {};
-                              const lineProps = shapeType === 'Line' ? parsed as LineShapeProps : {};
-                              const connectedProps = shapeType === 'ConnectingLines' ? parsed as ConnectedLinesShapeProps : {};
                               return (
-                                <></>
-                              )
-                              // return (
-                              //   <ShapeCanvas
-                              //     mode="input"
-                              //     width={200}
-                              //     height={200}
-                              //   />
-                              // );
+                                <ShapeCanvas
+                                  mode="input"
+                                  onToggleCoord={() => {}}
+                                  width={200}
+                                  height={200}
+                                  rowIndex={index}
+                                  position={position}
+                                  handleShapeKeyDown={handleShapeKeyDown}
+                                  setShapeInputRef={setShapeRef}
+                                  rowInputs={rowInputs}
+                                  ozn={row.ozn}
+                                  setInputValue={setInputValue}
+                                  rawConfig={row.oblikIMere}
+                                />);
                             })()
                           }
                         </div>
@@ -246,7 +263,10 @@ export default function TableEditorForm({
                         <PrettyButton
                           color="blue"
                           className="w-full"
-                          onClick={() => setPickingRowIndex(index)}
+                          onClick={() => {
+                            console.log("Opening shape sidebar for row", index);
+                            shapeSidebar.openForRow(index, position, row.ozn);
+                          }}
                         >
                           Choose
                         </PrettyButton>
@@ -301,18 +321,40 @@ export default function TableEditorForm({
                 ))}
               </tbody>
             </table>
+            <PrettyButton
+              onClick={() => addRow(position)}
+              className="w-full mt-2 flex justify-center items-center gap-2"
+              color="green"
+            >
+              <PlusCircle size={18} />
+            </PrettyButton>
           </div>
         ))
       }
 
-      {/* <PrettyButton
-        onClick={addRow}
+      <PrettyButton
+        onClick={() => addRow()}
         className="w-full mt-2 flex justify-center items-center gap-2"
         color="blue"
       >
         <PlusCircle size={18} />
-      </PrettyButton> */}
+      </PrettyButton>
     </div>
+    <ShapeSearchableSidebar
+      isOpen={shapeSidebar.isOpen}
+      onToggle={shapeSidebar.close}
+      onSelectShape={(shape) => {
+        shapeSidebar.handleShapeSelected(
+          shape,
+          updateRow
+        );
+
+        shape.selectedCoords.forEach(({ x, y }) => {
+          setInputValue(shapeSidebar.ozn!, shapeSidebar.position!, shapeSidebar.rowIndex!, `${x}-${y}`, 0);
+        });
+      }}
+    />
+      </>
   );
 }
 

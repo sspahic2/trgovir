@@ -19,17 +19,15 @@ export default function ShapeUpdatePage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const {
-    shapeType,
-    squareProps,
-    lineProps,
-    connectedProps,
-    currentProps,
-    selectedCoords,
-    toggleCoordinate,
-    update,
-    updateTail,
+    configuration,
+    innerCoords,
+    outerCoords,
     loadConfiguration,
+    updateConfiguration,
     handleUpdate,
+    toggleCoordinate,
+    title,
+    setTitle
   } = useShapeConfiguration();
 
   // Redirect if not authenticated
@@ -45,8 +43,8 @@ export default function ShapeUpdatePage() {
     if (isNaN(numericId)) return;
 
     ConfigurationService.getById(numericId)
-      .then(({ configuration, selectedCoords }) => {
-        loadConfiguration(configuration, selectedCoords);
+      .then(({ configuration, selectedCoords, title }) => {
+        loadConfiguration(configuration, selectedCoords, title);
       })
       .catch((err) => {
         console.error('Failed to load configuration', err);
@@ -62,23 +60,17 @@ export default function ShapeUpdatePage() {
     return null;
   }
 
-  // Prepare numeric fields for sidebar
-  const numericFields = Object.entries(currentProps).filter(
-    ([, value]) => typeof value === 'number'
-  ) as [string, number][];
-
   return (
     <div className="flex h-screen">
       {/* Canvas area */}
       <div className="flex-1 flex justify-center items-center relative" style={{ backgroundColor: 'var(--card-bg)' }}>
         <ShapeCanvas
-          shapeType={shapeType}
-          squareProps={squareProps}
-          lineProps={lineProps}
-          connectedProps={connectedProps}
-          selectedCoords={selectedCoords}
+          rawConfig={configuration}
+          selectedCoords={outerCoords.concat(innerCoords)}
           onToggleCoord={toggleCoordinate}
-          mode={'edit'}
+          mode="edit"
+          width={300}
+          height={300}
         />
       </div>
 
@@ -86,13 +78,12 @@ export default function ShapeUpdatePage() {
       <ShapeSidebar
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen((prev) => !prev)}
-        shapeType={shapeType}
-        numericFields={numericFields}
-        tailConfig={squareProps.tail}
-        update={update}
-        updateTail={updateTail}
+        configuration={configuration}
+        updateConfiguration={updateConfiguration}
         onSave={() => handleUpdate(Number(id))}
         saveLabel="Save Changes"
+        title={title}
+        setTitle={setTitle}
       />
     </div>
   );

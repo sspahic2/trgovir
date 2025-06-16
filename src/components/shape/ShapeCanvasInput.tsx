@@ -20,6 +20,8 @@ interface ShapeCanvasInputProps {
     row: number,
     key: string
   ) => void;
+  innerSlots?: Coordinate[];
+  getInnerOffset?: (slot: Coordinate) => { x: number; y: number };
 }
 
 export default function ShapeCanvasInput({
@@ -36,7 +38,9 @@ export default function ShapeCanvasInput({
   offsetY,
   setShapeInputRef,
   rowIndex,
-  handleShapeKeyDown
+  handleShapeKeyDown,
+  innerSlots,
+  getInnerOffset
 }: ShapeCanvasInputProps) {
   return (
     <div className="relative" style={{ width, height }}>
@@ -72,8 +76,49 @@ export default function ShapeCanvasInput({
               onInputChange(slot, isNaN(parsed) ? 0 : parsed);
             }}
             ref={(el) => { 
-              console.log("Setting ref", { rowIndex, key, el });
               setShapeInputRef?.(rowIndex, key, el)
+            }}
+            onKeyDown={(e) => handleShapeKeyDown?.(e, rowIndex, key)}
+            className={`
+              absolute w-12 h-6 text-[10px] text-center font-light rounded
+              bg-transparent outline-none border border-transparent
+              focus:border-blue-500 focus:bg-white
+              hover:border-gray-300
+              transition-all duration-100
+              [appearance:textfield]
+              focus:z-20
+              hover:z-20
+              z-10
+            `}
+            style={{
+              left: `${x}px`,
+              top: `${y}px`,
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        );
+      })}
+
+      {innerSlots?.map((slot) => {
+        const key = `${slot.x}-${slot.y}`;
+        const isSelected = Object.keys(inputValues).includes(key);
+        if (!isSelected) return null;
+
+        const { x, y } = getInnerOffset!(slot);
+
+        return (
+          <input
+            key={`inner-${key}`}
+            type="text"
+            inputMode="numeric"
+            value={inputValues[key] ?? ''}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => {
+              const parsed = parseFloat(e.target.value);
+              onInputChange(slot, isNaN(parsed) ? 0 : parsed);
+            }}
+            ref={(el) => {
+              setShapeInputRef?.(rowIndex, key, el);
             }}
             onKeyDown={(e) => handleShapeKeyDown?.(e, rowIndex, key)}
             className={`

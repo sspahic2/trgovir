@@ -15,6 +15,8 @@ interface ShapeCanvasViewProps {
   scale: number;
   offsetX: number;
   offsetY: number;
+  innerSlots?: Coordinate[];
+  getInnerOffset?: (slot: Coordinate) => { x: number; y: number };
 }
 
 export default function ShapeCanvasView({
@@ -27,7 +29,9 @@ export default function ShapeCanvasView({
   selectedCoords,
   scale,
   offsetX,
-  offsetY
+  offsetY,
+  innerSlots,
+  getInnerOffset
 }: ShapeCanvasViewProps) {
 
   return (
@@ -53,6 +57,25 @@ export default function ShapeCanvasView({
           return isSel ? (
             <text
               key={`${slot.x}-${slot.y}`}
+              x={x}
+              y={y}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="red"
+              fontSize={14}
+            >
+              x
+            </text>
+          ) : null;
+        })}
+
+        {innerSlots?.map((slot) => {
+          const { x, y } = getInnerOffset!(slot);
+          const isSel = selectedCoords.some(sc => sc.x === slot.x && sc.y === slot.y);
+
+          return isSel ? (
+            <text
+              key={`inner-${slot.x}-${slot.y}`}
               x={x}
               y={y}
               textAnchor="middle"

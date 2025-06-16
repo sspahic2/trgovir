@@ -6,9 +6,16 @@ import { useEffect, useState } from "react";
 
 import ShapeCanvas from "@/components/shape/ShapeCanvas";
 import PrettySelect from "@/components/common/select/PrettySelect";
+import ShapeSidebar from "@/components/shape/ShapeSidebar";
 
 import { useShapeConfiguration } from "@/hooks/useShapeConfiguration";
-import ShapeSidebar from "@/components/shape/ShapeSidebar";
+import { serializeConnectedLinesConfig, serializeLineConfig, serializeSquareConfig, serializeSquareWithMissingSideConfig, serializeSquareWithTwoTailConfig, serializeSquareWithTwoTailDoubleConfig } from "@/lib/serializer/serializeShapeConfig";
+import { defaultConfig as connectingDefaults } from "@/components/shape/ConnectingLines";
+import { defaultConfig as lineDefaults } from "@/components/shape/Line";
+import { defaultConfig as squareWithTailDefaults } from "@/components/shape/SquareWithTail";
+import { defaultConfig as squareWithTwoTailDefaults } from "@/components/shape/SquareWithTwoTail";
+import { defaultConfig as squareWithTwoTailDoubleDefaults } from "@/components/shape/SquareWithTwoTailDouble";
+import { defaultConfig as squareWithMissingSideDefaults } from "@/components/shape/SquareWithMissingSide";
 
 export default function ShapeCreatorPage() {
   const { data: session, status } = useSession();
@@ -16,17 +23,14 @@ export default function ShapeCreatorPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const {
-    shapeType,
-    setShapeTypeSafe,
-    squareProps,
-    lineProps,
-    connectedProps,
-    currentProps,
-    update,
-    updateTail,
-    handleSave,
-    selectedCoords,
+    configuration,
+    innerCoords,
+    outerCoords,
+    updateConfiguration,
     toggleCoordinate,
+    handleSave,
+    title,
+    setTitle
   } = useShapeConfiguration();
 
   useEffect(() => {
@@ -37,23 +41,39 @@ export default function ShapeCreatorPage() {
 
   if (status !== "authenticated" || !session?.user?.isSuperAdmin) return null;
 
-  // gather all numeric props for sliders/inputs
-  const numericFields = Object.entries(currentProps).filter(
-    ([_, value]) => typeof value === "number"
-  );
-
   return (
     <div className="flex h-screen">
       {/* Shape type selector */}
       <div className="absolute top-7 left-4 z-10 w-60">
         <PrettySelect
           label="Shape Type"
-          value={shapeType}
-          onChange={(e) => setShapeTypeSafe(e.target.value)}
+          value={configuration}
+          onChange={(e) => updateConfiguration(e.target.value)}
           options={[
-            { value: "SquareWithTail", label: "Square with Tail" },
-            { value: "Line", label: "Line" },
-            { value: "ConnectingLines", label: "Connecting Lines" },
+            {
+              label: "Square with Tail",
+              value: serializeSquareConfig(squareWithTailDefaults),
+            },
+            {
+              label: "Line",
+              value: serializeLineConfig(lineDefaults),
+            },
+            {
+              label: "Connecting Lines",
+              value: serializeConnectedLinesConfig(connectingDefaults),
+            },
+            {
+              label: "Square with Two Tail",
+              value: serializeSquareWithTwoTailConfig(squareWithTwoTailDefaults)
+            },
+            {
+              label: "Square with Two Tail Double",
+              value: serializeSquareWithTwoTailDoubleConfig(squareWithTwoTailDoubleDefaults)
+            },
+            {
+              label: "Square with Missing Side",
+              value: serializeSquareWithMissingSideConfig(squareWithMissingSideDefaults)
+            }
           ]}
         />
       </div>
@@ -61,13 +81,12 @@ export default function ShapeCreatorPage() {
       {/* Canvas area */}
       <div className="flex-1 flex justify-center items-center relative" style={{ backgroundColor: 'var(--card-bg)' }}>
         <ShapeCanvas
-          shapeType={shapeType}
-          squareProps={squareProps}
-          lineProps={lineProps}
-          connectedProps={connectedProps}
-          selectedCoords={selectedCoords}
+          rawConfig={configuration}
+          selectedCoords={outerCoords.concat(innerCoords)}
           onToggleCoord={toggleCoordinate}
           mode={'edit'}
+          width={300}
+          height={300}
         />
       </div>
 
@@ -75,12 +94,11 @@ export default function ShapeCreatorPage() {
       <ShapeSidebar
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
-        shapeType={shapeType}
-        numericFields={numericFields}
-        tailConfig={squareProps.tail}
-        update={update}
-        updateTail={updateTail}
+        configuration={configuration}
+        updateConfiguration={updateConfiguration}
         onSave={handleSave}
+        title={title}
+        setTitle={setTitle}
       />
     </div>
   );

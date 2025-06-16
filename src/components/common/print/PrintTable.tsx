@@ -1,34 +1,73 @@
 // src/components/common/print/PrintTable.tsx
 'use client';
-import React from 'react';
+
+import React, { useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import type { TableRow } from '@/models/TableRow';
 import type { Table } from '@/models/Table';
-import { ShapeConfiguration, ShapeType } from '@/models/ShapeConfiguration';
 import ShapeCanvas from '@/components/shape/ShapeCanvas';
-import { parseGeneralConfig } from '@/lib/parser/parseShapeConfig';
-import { ConnectedLinesShapeProps } from '@/components/shape/ConnectingLines';
-import { LineShapeProps } from '@/components/shape/Line';
-import { SquareWithTailProps } from '@/components/shape/SquareWithTail';
+import { ShapeConfiguration } from '@/models/ShapeConfiguration';
+import { useInputRefs } from '@/hooks/useInputRefs';
+import PrintTableRow from './PrintTableRow';
 
+/* ──────────────────────────────── Main PrintTable component */
 interface PrintTableProps {
   table: Table & { rows: TableRow[] };
   shapeOptions: ShapeConfiguration[] | null;
+  /** Parent expects this to fire once per row */
+  onReady?: () => void;
 }
 
-export default function PrintTable({ table, shapeOptions }: PrintTableProps) {
+export default function PrintTable({
+  table,
+  shapeOptions,
+  onReady,
+}: PrintTableProps) {
+  /* Build grouping so ShapeCanvas gets its input refs */
+  const grouping = useMemo(() => {
+    const byPos: Record<string, TableRow[]> = {};
+    table.rows.forEach((r) => (byPos[r.position || 'Unspecified'] ||= []).push(r));
+
+    return Object.entries(byPos).map(([position, rows], idx) => ({
+      position,
+      positionIndex: idx,
+      rows: rows.map((r) => ({
+        oblikIMere: r.oblikIMere,
+        diameter: r.diameter,
+        lg: r.lg,
+        n: r.n,
+        lgn: r.lgn,
+        tableId: r.tableId,
+        position: r.position,
+        ozn: r.ozn,
+      })),
+    }));
+  }, [table.rows]);
+
+  const { rowInputs } = useInputRefs(grouping, shapeOptions ?? []);
+
+  /* Helper styles */
+  const thCell = (bg?: string): React.CSSProperties => ({
+    border: '1px solid #000',
+    padding: '0.4rem',
+    textAlign: 'center',
+    background: bg ?? undefined,
+  });
+
+  /* Group by Ø so every page has its own header */
   const byDiameter: Record<string, TableRow[]> = {};
-  table.rows.forEach(r => (byDiameter[r.diameter?.toString() || 'null'] ||= []).push(r));
+  table.rows.forEach(
+    (r) => (byDiameter[r.diameter?.toString() || 'null'] ||= []).push(r)
+  );
 
   return (
     <>
-      {Object.entries(byDiameter).map(([diameter, rows], di) => {
-        // group by position
+      {Object.entries(byDiameter).map(([diameter, rowsByØ], di) => {
         const byPos: Record<string, TableRow[]> = {};
-        rows.forEach(r => (byPos[r.position!] ||= []).push(r));
+        rowsByØ.forEach((r) => (byPos[r.position || 'Unspecified'] ||= []).push(r));
 
         return (
           <div key={diameter}>
-            {/* only break before if NOT the first */}
+            {/* page break before every new Ø except the first */}
             <div
               style={{
                 pageBreakBefore: di > 0 ? 'always' : undefined,
@@ -36,28 +75,20 @@ export default function PrintTable({ table, shapeOptions }: PrintTableProps) {
                 marginBottom: '1.5rem',
               }}
             >
-              <h1 style={{ fontSize: '3rem', margin: '0.5rem 0' }}>
-                {diameter}Ø
-              </h1>
+              <h1 style={{ fontSize: '3rem', margin: '0.5rem 0' }}>{diameter}Ø</h1>
               <div style={{ fontSize: '1.1rem', lineHeight: 1.4 }}>
-                <div>
-                  KLIJENT:&nbsp;
-                  <span style={{ fontWeight: 'bold', textDecoration: 'underline' }}>
-                    {table.client}
-                  </span>
-                </div>
-                <div>
-                  ADRESA:&nbsp;
-                  <span style={{ fontWeight: 'bold', textDecoration: 'underline' }}>
-                    {table.address}
-                  </span>
-                </div>
-                <div>
-                  GRADILIŠTE:&nbsp;
-                  <span style={{ fontWeight: 'bold', textDecoration: 'underline' }}>
-                    {table.job}
-                  </span>
-                </div>
+                {['KLIJENT', 'ADRESA', 'GRADILIŠTE'].map((label) => (
+                  <div key={label}>
+                    {label}:&nbsp;
+                    <span style={{ fontWeight: 'bold', textDecoration: 'underline' }}>
+                      {label === 'KLIJENT'
+                        ? table.client
+                        : label === 'ADRESA'
+                        ? table.address
+                        : table.job}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -73,97 +104,36 @@ export default function PrintTable({ table, shapeOptions }: PrintTableProps) {
               >
                 <thead>
                   <tr>
-                    <th
-                      colSpan={6}
-                      style={{
-                        border: '1px solid #000',
-                        padding: '0.5rem',
-                        background: '#f0f0f0',
-                        textAlign: 'center',
-                        fontSize: '1.2rem',
-                      }}
-                    >
+                    <th colSpan={6} style={thCell('#f0f0f0')}>
                       {position}
                     </th>
                   </tr>
                   <tr>
-                    {['ozn','Oblik i Dimenzije Šipke','Prečnik','Dužina','Količina','Ukupno'].map(h => (
-                      <th
-                        key={h}
-                        style={{
-                          border: '1px solid #000',
-                          padding: '0.4rem',
-                          textAlign: 'center',
-                          background: '#fafafa',
-                        }}
-                      >
+                    {[
+                      'ozn',
+                      'Oblik i Dimenzije Šipke',
+                      'Prečnik',
+                      'Dužina',
+                      'Količina',
+                      'Ukupno',
+                    ].map((h) => (
+                      <th key={h} style={thCell('#fafafa')}>
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {posRows.map((row, idx) => {
-                    const raw = row.lg != null && row.n != null ? row.lg * row.n : null;
-                    const ukupno = row.lgn != null ? row.lgn.toFixed(2) : '-';
-                    return (
-                      <tr key={row.id}>
-                        <td style={td}>{row.ozn}</td>
-                        <td style={td}>
-                          {row.oblikIMere?.startsWith('extracted_shapes') ? (
-                            <img
-                              src={`${process.env.NEXT_PUBLIC_FLASK_API}${row.oblikIMere}`}
-                              alt=""
-                              style={{ maxHeight: '4rem', display: 'block', margin: '0 auto' }}
-                            />
-                          ) : (
-                            (() => {
-                              try {
-                                const type = row.oblikIMere!.split(';')[0] as ShapeType;
-                                const parsed = parseGeneralConfig(row.oblikIMere!);
-                                const squareProps =
-                                  type === 'SquareWithTail'
-                                    ? (parsed as SquareWithTailProps)
-                                    : ({} as SquareWithTailProps);
-                                const lineProps =
-                                  type === 'Line'
-                                    ? (parsed as LineShapeProps)
-                                    : ({} as LineShapeProps);
-                                const connProps =
-                                  type === 'ConnectingLines'
-                                    ? (parsed as ConnectedLinesShapeProps)
-                                    : ({} as ConnectedLinesShapeProps);
-                                const coords =
-                                  shapeOptions
-                                    ?.find(s => s.configuration === row.oblikIMere)
-                                    ?.selectedCoords ?? [];
-
-                                return (
-                                  <ShapeCanvas
-                                    shapeType={type}
-                                    mode="view"
-                                    squareProps={squareProps}
-                                    lineProps={lineProps}
-                                    connectedProps={connProps}
-                                    selectedCoords={coords}
-                                    onToggleCoord={()=>{}}
-                                    width={100}
-                                    height={50}
-                                  />
-                                );
-                              } catch {
-                                return <span style={{ color:'red',fontSize:'.8rem' }}>Invalid</span>;
-                              }
-                            })()
-                          )}
-                        </td>
-                        <td style={td}>{row.diameter ?? '-'}</td>
-                        <td style={td}>{row.lg ?? '-'}</td>
-                        <td style={td}>{row.n ?? '-'}</td>
-                        <td style={td}>{ukupno}</td>
-                      </tr>
-                    );
-                  })}
+                  {posRows.map((row, rowIdx) => (
+                    <PrintTableRow
+                      key={row.id}
+                      row={row}
+                      rowIdx={rowIdx}
+                      position={position}
+                      rowInputs={rowInputs}
+                      onReady={onReady}
+                    />
+                  ))}
                 </tbody>
               </table>
             ))}
@@ -173,9 +143,3 @@ export default function PrintTable({ table, shapeOptions }: PrintTableProps) {
     </>
   );
 }
-
-const td: React.CSSProperties = {
-  border: '1px solid #000',
-  padding: '0.4rem',
-  textAlign: 'center',
-};

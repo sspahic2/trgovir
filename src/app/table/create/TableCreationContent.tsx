@@ -2,7 +2,6 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import TableEditorForm from "@/components/table/TableEditorForm";
 import { TableService } from "@/services/table.service";
 import { ConfigurationService } from "@/services/configuration.service";
@@ -12,8 +11,6 @@ import { TableRow } from "@/models/TableRow";
 export default function TableCreateContent() {
   const { data: session } = useSession();
   const [shapeOptions, setShapeOptions] = useState<ShapeConfiguration[] | null>(null);
-
-  const searchParams = useSearchParams();
 
   const [importedRows, setImportedRows] = useState<TableRow[] | null>(null);
 

@@ -5,14 +5,9 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import PrettyButton from '@/components/common/button/PrettyButton';
-import { PlusCircle, Trash2 } from 'lucide-react';
-import ShapeCanvas from '@/components/shape/ShapeCanvas';
-import { parseGeneralConfig } from '@/lib/parser/parseShapeConfig';
+import { PlusCircle } from 'lucide-react'
 import { ConfigurationService } from '@/services/configuration.service';
-import type { SquareWithTailProps } from '@/components/shape/SquareWithTail';
-import type { LineShapeProps } from '@/components/shape/Line';
-import type { ConnectedLinesShapeProps } from '@/components/shape/ConnectingLines';
-import { ShapeConfiguration, ShapeType } from '@/models/ShapeConfiguration';
+import { ShapeConfiguration } from '@/models/ShapeConfiguration';
 import ShapeCard from '@/components/shape/ShapeCard';
 
 interface ShapeConfig {
@@ -60,21 +55,11 @@ export default function ShapeListPage() {
       </div>
       <div className="grid grid-cols-3 gap-6">
         {shapes?.map(shape => {
-          // derive type & props
-          const shapeType = shape.configuration.split(';')[0] as ShapeType;
-          const parsed = parseGeneralConfig(shape.configuration);
-          const squareProps  = shapeType === 'SquareWithTail'   ? (parsed as SquareWithTailProps)      : {} as SquareWithTailProps;
-          const lineProps    = shapeType === 'Line'             ? (parsed as LineShapeProps)            : {} as LineShapeProps;
-          const connectedProps = shapeType === 'ConnectingLines'? (parsed as ConnectedLinesShapeProps)  : {} as ConnectedLinesShapeProps;
-
           return (
             <ShapeCard
+              rawConfig={shape.configuration}
               key={shape.id}
               mode="view"
-              shapeType={shapeType}
-              squareProps={squareProps}
-              lineProps={lineProps}
-              connectedProps={connectedProps}
               selectedCoords={shape.selectedCoords}
               width={300}
               height={300}

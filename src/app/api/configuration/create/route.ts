@@ -5,7 +5,7 @@ import { requireSuperAdmin } from "@/lib/auth-guard";
 
 export async function POST(req: Request) {
   await requireSuperAdmin();
-  const { configuration, selectedCoords } = await req.json();      // <— now reads coords
-  const result = await ConfigurationRepository.create(configuration, selectedCoords);
+  const { configuration, selectedCoords, title } = await req.json();    // <— now reads coords
+  const result = await ConfigurationRepository.create(configuration, selectedCoords, title);
   return NextResponse.json({ result });
 }

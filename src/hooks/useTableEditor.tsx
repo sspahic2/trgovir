@@ -56,8 +56,8 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
             n: null,
             lgn: null,
             tableId: 0,
-            position: undefined,
-            ozn: 0
+            position: "Nije naznačeno",
+            ozn: 1
           },
         ]
     }
@@ -84,13 +84,13 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
   const [saved, _setSaved] = useState(false);
   const [isSuperAdmin, _setIsSuperAdmin] = useState(false);
 
-  const handleSave = async (): Promise<EditableRow[]> => {
+  const handleSave = async (rowInputs: Record<string, Record<string, number>>): Promise<EditableRow[]> => {
     if (!table.name.trim()) throw new Error("Table name is required");
   
     setSaving(true);
     setSavedStatus(false);
   
-    const rows = finalizeRowsForSave();
+    const rows = finalizeRowsForSave(rowInputs);
     return rows;
   };
 
@@ -117,15 +117,19 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
           n: null,
           lgn: null,
           tableId: 0,
-          position: undefined
+          position: "Nije naznačeno"
         },
       ],
     });
     _setSaved(false);
   };
 
-  const addRow = useCallback(() => {
-    _setTable((prev) => ({
+const addRow = useCallback((position?: string) => {
+  _setTable((prev) => {
+    const targetPosition = position ?? "Nije naznačeno";
+    const rowsForPosition = prev.rows.filter(row => row.position === targetPosition);
+    const newOzn = rowsForPosition.length > 0 ? rowsForPosition.pop()?.ozn! + 1 : 1;
+    return {
       ...prev,
       rows: [
         ...prev.rows,
@@ -136,12 +140,13 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
           n: null,
           lgn: null,
           tableId: prev.id,
-          position: undefined,
-          ozn: prev.rows.length + 1
+          position: targetPosition,
+          ozn: newOzn,
         },
       ],
-    }));
-  }, []);
+    };
+  });
+}, []);
 
   const deleteRow = useCallback((position: string, indexInGroup: number) => {
     _setTable(prev => {
@@ -190,8 +195,20 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
   }, []);
 
   // ✅ this is used during save()
-  const finalizeRowsForSave = (): EditableRow[] => {
-    return table.rows;
+  const finalizeRowsForSave = (rowInputs: Record<string, Record<string, number>>): EditableRow[] => {
+    let result: EditableRow[] = [];
+
+    groupingByPosition.map((pos) => {
+      pos.rows.map((row, index) => {
+        const inputs = rowInputs[`${row.position}-${index}-${row.ozn}`] || {};
+        result.push({
+          ...row,
+          oblikIMere: serializeShapeWithInputs(row.oblikIMere, inputs),
+        });
+      })
+    })
+
+    return result;
   };
 
   return {

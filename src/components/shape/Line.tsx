@@ -1,5 +1,6 @@
 'use client';
 
+import { ColorHelper } from '@/helpers/color.helper';
 import React from 'react';
 
 export type LineDirection = 'horizontal' | 'vertical';
@@ -42,12 +43,19 @@ const LineShape: React.FC<LineShapeProps> = ({
         y1={y1}
         x2={x2}
         y2={y2}
-        stroke={strokeColor}
+        stroke={ColorHelper.determineColor(strokeColor || "theme")}
         strokeWidth={thickness}
         strokeLinecap="round"
       />
     </svg>
   );
+};
+
+export const defaultConfig: LineShapeProps = {
+  length: 150,
+  thickness: 4,
+  direction: 'horizontal',
+  strokeColor: 'theme',
 };
 
 export default LineShape;

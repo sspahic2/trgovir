@@ -12,6 +12,8 @@ interface ShapeCanvasEditProps {
   scale: number;
   offsetX: number;
   offsetY: number;
+  innerSlots?: Coordinate[];
+  getInnerOffset?: (slot: Coordinate) => { x: number; y: number };
 }
 
 export default function ShapeCanvasEdit({
@@ -25,7 +27,9 @@ export default function ShapeCanvasEdit({
   onToggleCoord,
   offsetX,
   offsetY,
-  scale
+  scale,
+  innerSlots,
+  getInnerOffset
 }: ShapeCanvasEditProps) {
   return (
     <div className="relative" style={{ width, height }}>
@@ -50,6 +54,41 @@ export default function ShapeCanvasEdit({
           return (
             <g
               key={`${slot.x}-${slot.y}`}
+              onClick={() => onToggleCoord(slot)}
+              className="cursor-pointer"
+            >
+              <rect
+                x={x - 7}
+                y={y - 7}
+                width={14}
+                height={14}
+                fill="transparent"
+                stroke={isSel ? 'red' : 'gray'}
+                strokeWidth={1}
+              />
+              {isSel && (
+                <text
+                  x={x}
+                  y={y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="red"
+                  fontSize={14}
+                >
+                  x
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {innerSlots?.map((slot) => {
+          const { x, y } = getInnerOffset!(slot);
+          const isSel = selectedCoords.some(sc => sc.x === slot.x && sc.y === slot.y);
+
+          return (
+            <g
+              key={`inner-${slot.x}-${slot.y}`}
               onClick={() => onToggleCoord(slot)}
               className="cursor-pointer"
             >

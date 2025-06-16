@@ -11,12 +11,6 @@ import type { LineShapeProps } from '@/components/shape/Line';
 import type { ConnectedLinesShapeProps } from '@/components/shape/ConnectingLines';
 
 interface ShapeCardProps {
-  /** What kind of shape to render */
-  shapeType: ShapeType;
-  /** Props for each shape type (only one will be used) */
-  squareProps?: SquareWithTailProps;
-  lineProps?: LineShapeProps;
-  connectedProps?: ConnectedLinesShapeProps;
   /** Only relevant in view‐mode to show “×” markers */
   selectedCoords?: Coordinate[];
   /** Layout mode: view shows delete & can navigate, select only shows click‐to‐pick */
@@ -30,27 +24,27 @@ interface ShapeCardProps {
   onDelete?: () => void;
 
   selected?: boolean;
+  rawConfig?: string;
+  title?: string;
 }
 
 export default function ShapeCard({
-  shapeType,
-  squareProps,
-  lineProps,
-  connectedProps,
   selectedCoords = [],
   mode = 'view',
   width = 200,
   height = 200,
   onClick,
   onDelete,
-  selected = false
+  selected = false,
+  rawConfig,
+  title
 }: ShapeCardProps) {
   return (
     <div
       className={`relative bg-white rounded-lg shadow transition ${
         onClick ? 'cursor-pointer' : ''
       } ${selected ? 'ring-4 ring-blue-500' : 'hover:shadow-lg'}`}
-      style={{ width, height }}
+      style={{ width: `${width}px`, height: `${height}px` }}
       onClick={onClick}
     >
       {/* delete button (view‐mode) */}
@@ -69,18 +63,18 @@ export default function ShapeCard({
       )}
 
       {/* shape preview */}
-      <div className="p-2 flex items-center justify-center h-full" style={{ backgroundColor: 'var(--card-bg)' }}>
+      <div className="p-2 flex items-center justify-center h-full flex-col" style={{ backgroundColor: 'var(--card-bg)' }}>
         <ShapeCanvas
-          shapeType={shapeType}
-          squareProps={squareProps || {}}
-          lineProps={lineProps || {}}
-          connectedProps={connectedProps || {}}
           selectedCoords={selectedCoords}
+          rawConfig={rawConfig}
           onToggleCoord={() => {}}
           mode={mode === 'view' ? 'view' : 'input'}
           width={width - 16}
-          height={height - 16}
+          height={height - 64}
         />
+        <div className='text-sm text-center'>
+          {title}
+        </div>
       </div>
     </div>
   );

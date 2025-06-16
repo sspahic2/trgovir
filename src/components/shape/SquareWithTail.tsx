@@ -13,6 +13,18 @@ export const checkboxCount = {
   left: 5,
 };
 
+export const defaultConfig: SquareWithTailProps = {
+  width: 100,
+  height: 100,
+  radius: 10,
+  strokeColor: "theme",
+  tail: {
+    corner: "bottom-right",
+    side: "right",
+    length: 20,
+    angle: 30,
+  },
+};
 
 export interface TailConfig {
   corner: Corner;

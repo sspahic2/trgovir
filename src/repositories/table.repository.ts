@@ -6,7 +6,9 @@ export const TableRepository = {
   async getById(id: number) {
     return prisma.table.findUnique({
       where: { id },
-      include: { rows: true },
+      include: { rows: {
+        orderBy: { id: 'asc' }
+      } }
     });
   },
 

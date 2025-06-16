@@ -1,5 +1,6 @@
 'use client';
 
+import { ColorHelper } from '@/helpers/color.helper';
 import React from 'react';
 const toRadians = (deg: number) => (deg * Math.PI) / 180;
 
@@ -15,6 +16,13 @@ export const checkboxCount = {
   right:  1,
   bottom: 1,
   left:   1,
+};
+
+export const defaultConfig: ConnectedLinesShapeProps = {
+  length: 80,
+  thickness: 4,
+  angle: 60,
+  strokeColor: "theme",
 };
 
 const ConnectedLinesShape: React.FC<ConnectedLinesShapeProps> = ({
@@ -54,7 +62,7 @@ const ConnectedLinesShape: React.FC<ConnectedLinesShapeProps> = ({
         y1={y1}
         x2={cx}
         y2={cy}
-        stroke={strokeColor}
+        stroke={ColorHelper.determineColor(strokeColor || "theme")}
         strokeWidth={thickness}
         strokeLinecap="round"
       />

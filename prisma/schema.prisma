@@ -47,4 +47,5 @@ model ShapeConfiguration {
   selectedCoords  Json       @default("[]")
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  title           String      @default("")
 }

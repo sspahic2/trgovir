@@ -3,13 +3,14 @@ import { prisma } from "../../lib/prisma";
 import { Prisma } from "@prisma/client";
 
 export const ConfigurationRepository = {
-  create: async (config: string, selectedCoords: Coordinate[]) => {
+  create: async (config: string, selectedCoords: Coordinate[], title: string) => {
     return prisma.shapeConfiguration.create({
       data: {
         configuration: config,
         selectedCoords: (selectedCoords as unknown) as Prisma.JsonArray,
         createdAt: new Date(),
         updatedAt: new Date(),
+        title: title
       },
     });
   },
@@ -19,6 +20,7 @@ export const ConfigurationRepository = {
     id: number,
     config: string,
     selectedCoords: Coordinate[],
+    title: string,
     date: Date
   ) => {
     return prisma.shapeConfiguration.update({
@@ -27,6 +29,7 @@ export const ConfigurationRepository = {
         configuration: config,
         selectedCoords: (selectedCoords as unknown) as Prisma.JsonArray,
         updatedAt: date,
+        title: title
       },
     });
   },
