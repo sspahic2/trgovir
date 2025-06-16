@@ -75,13 +75,7 @@ export default function PrintableLabels() {
   const handleLabelReady = useCallback(() => {
     readyRef.current += 1;
     setReadyCount(readyRef.current);
-    console.log({cur: readyRef.current, totCur: totalRowsRef.current })
     if (readyRef.current === totalRowsRef.current && table) {
-      console.log({
-        isInside: true,
-        ready: readyRef.current,
-        total: totalRowsRef.current,
-      });
       // Next frame → guaranteed paint complete
       requestAnimationFrame(() => window.print());
     }

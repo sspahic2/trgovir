@@ -264,7 +264,6 @@ export default function TableEditorForm({
                           color="blue"
                           className="w-full"
                           onClick={() => {
-                            console.log("Opening shape sidebar for row", index);
                             shapeSidebar.openForRow(index, position, row.ozn);
                           }}
                         >

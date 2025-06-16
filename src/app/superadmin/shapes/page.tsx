@@ -26,7 +26,6 @@ export default function ShapeListPage() {
     if (status !== 'authenticated') return;
     (async () => {
       const list = await ConfigurationService.getAll();
-      console.log({list})
       setShapes(list);
     })();
   }, [status]);
