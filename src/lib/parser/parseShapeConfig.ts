@@ -1,5 +1,6 @@
 import { ConnectedLinesShapeProps } from "@/components/shape/ConnectingLines";
 import { LineShapeProps, LineDirection } from "@/components/shape/Line";
+import { DualTailConfig, SquareWithIndependentTailsProps } from "@/components/shape/SquareWithIndependentTails";
 import { SquareWithMissingSideProps } from "@/components/shape/SquareWithMissingSide";
 import { Corner, Side, SquareWithTailProps } from "@/components/shape/SquareWithTail";
 import { SquareWithTwoTailProps } from "@/components/shape/SquareWithTwoTail";
@@ -148,6 +149,73 @@ export function parseSquareWithMissingSideConfig(input: string): SquareWithMissi
   }
 }
 
+export const parseSquareWithIndependentTailsConfig = (
+  str: string,
+): SquareWithIndependentTailsProps => {
+  const parts = str.split(";");
+  const result: SquareWithIndependentTailsProps = {
+    tails: [],
+    sides: {},
+    lengths: {} as Partial<Record<"top" | "right" | "bottom" | "left", number>>,
+  };
+
+  for (const part of parts) {
+    if (part.startsWith("width=")) {
+      result.width = parseFloat(part.split("=")[1]);
+    } else if (part.startsWith("height=")) {
+      result.height = parseFloat(part.split("=")[1]);
+    } else if (part.startsWith("radius=")) {
+      result.radius = parseFloat(part.split("=")[1]);
+    } else if (part.startsWith("stroke=")) {
+      result.strokeColor = part.split("=")[1];
+    }
+
+    // ───── tails ─────
+    else if (part.startsWith("tail1=") || part.startsWith("tail2=")) {
+      const idx = part.startsWith("tail1=") ? 0 : 1;
+      const [, value] = part.split("=");
+      const [corner, side, lengthStr, angleStr] = value.split(":");
+      (result.tails as [DualTailConfig?, DualTailConfig?])[idx] = {
+        corner: corner as Corner,
+        side: side as Side,
+        length: parseFloat(lengthStr),
+        angle: parseFloat(angleStr),
+      };
+    }
+
+    // ───── visible sides ─────
+    else if (part.startsWith("sides=")) {
+      const flags = part.split("=")[1];
+      const map = { t: "top", r: "right", b: "bottom", l: "left" } as const;
+      for (const c of flags) {
+        const k = map[c as keyof typeof map];
+        if (k) result.sides![k] = true;
+      }
+    }
+
+    // ───── per-side lengths ─────
+    else if (part.startsWith("lengths=")) {
+      const segs = part.split("=")[1].split(",");
+      for (const seg of segs) {
+        const [k, v] = seg.split(":");
+        if (["top", "right", "bottom", "left"].includes(k)) {
+          result.lengths![k as keyof typeof result.lengths] = parseFloat(v);
+        }
+      }
+    }
+  }
+
+  // 🔹 Fallback lengths so ShapeCanvas never crashes
+  result.lengths = {
+    top: result.lengths!.top ?? result.width ?? 100,
+    right: result.lengths!.right ?? result.height ?? 100,
+    bottom: result.lengths!.bottom ?? result.width ?? 100,
+    left: result.lengths!.left ?? result.height ?? 100,
+  };
+
+  return result;
+};
+
 export const parseConnectedLinesConfig = (str: string): ConnectedLinesShapeProps => {
   const parts = str.split(';');
   const result: ConnectedLinesShapeProps = {};
@@ -187,6 +255,8 @@ export const parseGeneralConfig = (str: string) => {
       return parseSquareWithTwoTailDoubleConfig(str);
     case "SquareWithMissingSide":
       return parseSquareWithMissingSideConfig(str);
+    case "SquareWithIndependentTails":
+      return parseSquareWithIndependentTailsConfig(str);
     default:
       return "Invalid";
   }

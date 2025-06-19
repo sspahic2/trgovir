@@ -190,7 +190,7 @@ export function useInputRefs(
   }, [table, shapeOptions]);
 
   const setInputValue = (
-    ozn: number,
+    ozn: string,
     position: string,
     rowIndex: number,
     key: string,

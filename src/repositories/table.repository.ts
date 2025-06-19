@@ -26,11 +26,19 @@ export const TableRepository = {
   },
 
   async create(data: Omit<TableRow, "id">) {
-    return prisma.tableRow.create({ data });
+    return prisma.tableRow.create({ data: {
+      ...data,
+      ozn: undefined,
+      ozn_text: data.ozn
+    } });
   },
   
   async update(id: number, data: Partial<Omit<TableRow, "id">>) {
-    return prisma.tableRow.update({ where: { id }, data });
+    return prisma.tableRow.update({ where: { id }, data: {
+      ...data,
+      ozn: undefined,
+      ozn_text: data.ozn
+    } });
   },  
 
   async delete(id: number) {
@@ -53,7 +61,7 @@ export const TableRepository = {
             n: Number(row.n),
             lgn: Number(row.lgn),
             position: row.position,
-            ozn: Number(row.ozn)
+            ozn_text: row.ozn
           })),
         },
       },
@@ -100,7 +108,7 @@ export const TableRepository = {
             n: Number(row.n),
             lgn: Number(row.lgn),
             position: row.position,
-            ozn: Number(row.ozn)
+            ozn_text: row.ozn
           }))
         }
       },

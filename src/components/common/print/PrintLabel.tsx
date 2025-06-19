@@ -61,19 +61,25 @@ export default function PrintLabel({
   }, [row.oblikIMere]);
 
   useLayoutEffect(() => {
-    if (isBitmap) return;                           // bitmaps handled via <img onLoad>
+    if (isBitmap) return;                         // bitmaps handled via <img>
 
-    // bail until useInputRefs has created this entry
-    if (!rowInputs) return;
+    if (!rowInputs) return;                       // wait for ShapeCanvas
 
-    // wait TWO animation frames for ShapeCanvas to finish its own cycle
-    let raf1 = requestAnimationFrame(() => {
-      let raf2 = requestAnimationFrame(reportReady);
-      return () => cancelAnimationFrame(raf2);
-    });
+    const tick = () => {
+      if (!canvasRef.current) return;
 
-    return () => cancelAnimationFrame(raf1);
-  }, [isBitmap, rowInputs, reportReady]);
+      const rect = canvasRef.current.getBoundingClientRect();
+      if (rect.width && rect.height) {
+        PDF417.draw(row.oblikIMere!, canvasRef.current, 3, 3);
+        reportReady();
+        return;                                   // done
+      }
+      requestAnimationFrame(tick);                // try again next frame
+    };
+
+    const raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  });
 
   const handleImg = () => {
     drawBarcode();
@@ -89,19 +95,19 @@ export default function PrintLabel({
           src={`${process.env.NEXT_PUBLIC_FLASK_API ?? ''}${row.oblikIMere}`}
           alt=""
           className="max-h-max object-contain mx-auto"
-          style={{ maxHeight: '3.5cm', minHeight: '2.5cm', flex: '0 0 auto' }}
+          style={{ height: '3.5cm', flex: '0 0 auto' }}
           onLoad={handleImg}
           onError={handleImg}
         />
       );
     }
     return (
-      <div className="flex justify-center">
+      <div className="flex justify-center" style={{ height: '3.5cm', flex: '0 0 auto' }}>
         <ShapeCanvas
           rawConfig={row.oblikIMere}
           mode="input"
-          width={115}
-          height={115}
+          width={250}
+          height={130}
           rowIndex={0}
           position={row.position || 'Unspecified'}
           ozn={row.ozn}
@@ -135,8 +141,8 @@ export default function PrintLabel({
             GRADILIŠTE: <span className="font-bold underline">{table.job}</span>
           </div>
         </div>
-        <div className="flex justify-center" style={{ maxHeight: '2cm', flex: '0 0 auto' }}>
-          <canvas ref={canvasRef} style={{ maxHeight: '2cm' }} />
+        <div className="flex justify-center" style={{ height: '1.5cm', flex: '0 0 auto' }}>
+          <canvas ref={canvasRef} style={{ height: '1.5cm' }} />
         </div>
         <div className="flex justify-between text-center font-medium text-lg" style={{ flex: '0 0 auto' }}>
           <div>

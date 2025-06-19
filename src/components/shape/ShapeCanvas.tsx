@@ -12,6 +12,7 @@ import { parseGeneralConfig } from '@/lib/parser/parseShapeConfig';
 import SquareWithTwoTailShape, { checkboxCount as squareTwoCheckboxCount, SquareWithTwoTailProps } from './SquareWithTwoTail';
 import SquareWithTwoTailDoubleShape, { checkboxCount as squareTwoDoubleCheckboxCount, SquareWithTwoTailDoubleProps, innerCheckboxCount as squareTwoDoubleInnerCheckboxCount } from './SquareWithTwoTailDouble';
 import SquareWithMissingSide, { checkboxCount as squareWithMissingSideCheckboxCount, SquareWithMissingSideProps } from './SquareWithMissingSide';
+import SquareWithIndependentTails, { innerCheckboxCount as independentTailInnerCheckboxCount, checkboxCount as independentTailCheckboxCount, SquareWithIndependentTailsProps } from './SquareWithIndependentTails';
 
 interface ShapeCanvasProps {
   selectedCoords?: Coordinate[];
@@ -28,9 +29,9 @@ interface ShapeCanvasProps {
     key: string
   ) => void;
   rowInputs?: Record<string, Record<string, number>>;
-  setInputValue?: (ozn:number, position: string, rowIndex: number, key: string, value: number) => void;
+  setInputValue?: (ozn:string, position: string, rowIndex: number, key: string, value: number) => void;
   rawConfig?: string;
-  ozn?: number;
+  ozn?: string;
 }
 
 export default function ShapeCanvas({
@@ -66,6 +67,7 @@ export default function ShapeCanvas({
     else if (shapeType === 'SquareWithTwoTail') props = parsed as SquareWithTwoTailProps;
     else if (shapeType === 'SquareWithTwoTailDouble') props = parsed as SquareWithTwoTailDoubleProps;
     else if (shapeType === 'SquareWithMissingSide') props = parsed as SquareWithMissingSideProps;
+    else if (shapeType === 'SquareWithIndependentTails') props = parsed as SquareWithIndependentTailsProps
   }
 
   if (shapeType === 'SquareWithTail') {
@@ -125,7 +127,16 @@ export default function ShapeCanvas({
     const length = shapeProps.length || 100;
     shapeWidth = shapeProps.direction === 'vertical' ? (shapeProps.thickness || 2) : length;
     shapeHeight = shapeProps.direction === 'vertical' ? length : (shapeProps.thickness || 2);
-  } else {
+  } 
+  else if (shapeType === "SquareWithIndependentTails") {
+    ShapeComponent  = SquareWithIndependentTails;
+    checkboxCount   = independentTailCheckboxCount;
+    shapeProps      = props;
+    innerCheckboxCount = independentTailInnerCheckboxCount;
+    shapeWidth = Math.max(shapeProps.lengths.top, shapeProps.lengths.bottom);
+    shapeHeight = Math.max(shapeProps.lengths.left, shapeProps.lengths.right);
+  }
+  else {
     ShapeComponent = ConnectedLinesShape;
     checkboxCount = connectedCheckboxCount;
     shapeProps = props;
@@ -171,19 +182,25 @@ export default function ShapeCanvas({
     let px: number, py: number;
 
     // Define an outward offset to move slots away from the shape's edges
-    const slotOffset = 10; // Adjust this value to control how far the slots are from the shape
+    let slotOffset_h = 20;
+    let slotOffset_v = 10
+
+    if(shapeType === 'SquareWithIndependentTails') {
+      slotOffset_h = -(shapeWidth / 8);
+      slotOffset_v = -(shapeHeight / 8);
+    }
 
     if (x === 0) { // top
       px = step * (y + 1);
-      py = 0 - slotOffset; // Move upward
+      py = 0 - slotOffset_v; // Move upward
     } else if (x === 1) { // right
-      px = shapeWidth + slotOffset; // Move right
+      px = shapeWidth + slotOffset_h; // Move right
       py = step * (y + 1);
     } else if (x === 2) { // bottom
       px = step * (y + 1);
-      py = shapeHeight + slotOffset; // Move downward
+      py = shapeHeight + slotOffset_v; // Move downward
     } else { // left
-      px = 0 - slotOffset; // Move left
+      px = 0 - slotOffset_h; // Move left
       py = step * (y + 1);
     }
 
@@ -211,19 +228,24 @@ export default function ShapeCanvas({
     const step = (side % 2 === 0 ? shapeWidth : shapeHeight) / (count + 1);
     let px: number, py: number;
 
-    const offset = 30;
+    let offset_h = 30;
+    let offset_v = 30
+    if(shapeType === 'SquareWithIndependentTails') {
+      offset_h = shapeWidth * 2 / 6
+      offset_v = shapeHeight * 2 / 6
+    }
 
     if (side=== 0) {
       px = step * (y + 1);
-      py = offset;
+      py = offset_v;
     } else if (side === 1) {
-      px = shapeWidth - offset;
+      px = shapeWidth - offset_h;
       py = step * (y + 1);
     } else if (side === 2) {
       px = step * (y + 1);
-      py = shapeHeight - offset;
+      py = shapeHeight - offset_v;
     } else {
-      px = offset;
+      px = offset_h;
       py = step * (y + 1);
     }
 

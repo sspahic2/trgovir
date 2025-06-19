@@ -204,10 +204,10 @@ export default function TableEditorForm({
                   <tr key={index} style={{ display: 'contents' }}>
                     <td className="flex border px-2 py-1">
                       <PrettyInput
-                        type="number"
+                        type="text"
                         value={row.ozn ?? ""}
                         onChange={e => {
-                          const newOzn = parseFloat(e.target.value.trim() || '0');
+                          const newOzn = e.target.value.trim();
                           const oldKey = `${position}-${index}-${row.ozn}`;
                           const newKey = `${position}-${index}-${newOzn}`;
                           renameRowKey(oldKey, newKey);   // from useInputRefs

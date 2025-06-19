@@ -195,11 +195,11 @@ function innerRectangle(width: number, height: number, radius: number = 10, side
     showBottom = true;
   }
   else if(side == 'left') {
-    xOffset = 4;
+    xOffset = 8;
     showLeft = true;
   }
   else if(side == 'right') {
-    xOffset = 4;
+    xOffset = 8;
     showRight = true;
   }
 

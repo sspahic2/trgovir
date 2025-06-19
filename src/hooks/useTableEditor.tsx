@@ -57,7 +57,7 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
             lgn: null,
             tableId: 0,
             position: "Nije naznačeno",
-            ozn: 1
+            ozn: "1"
           },
         ]
     }
@@ -111,7 +111,7 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
       rows: [
         {
           oblikIMere: "",
-          ozn: 1,
+          ozn: "1",
           diameter: null,
           lg: null,
           n: null,
@@ -127,8 +127,7 @@ export function useTableEditor({ initialTable, initialImportedRows }: UseTableEd
 const addRow = useCallback((position?: string) => {
   _setTable((prev) => {
     const targetPosition = position ?? "Nije naznačeno";
-    const rowsForPosition = prev.rows.filter(row => row.position === targetPosition);
-    const newOzn = rowsForPosition.length > 0 ? rowsForPosition.pop()?.ozn! + 1 : 1;
+    const newOzn = "1";
     return {
       ...prev,
       rows: [

@@ -12,6 +12,7 @@ import {
   serializeSquareWithTwoTailConfig,
   serializeSquareWithMissingSideConfig,
   serializeSquareWithTwoTailDoubleConfig,
+  serializeSquareWithIndependentTailsConfig,
 } from '@/lib/serializer/serializeShapeConfig';
 import type { TailConfig, SquareWithTailProps } from './SquareWithTail';
 import type { LineShapeProps } from './Line';
@@ -20,6 +21,9 @@ import PrettyInput from '@/components/common/input/PrettyInput';
 import { SquareWithTwoTailProps } from './SquareWithTwoTail';
 import type { SquareWithMissingSideProps } from './SquareWithMissingSide';
 import { SquareWithTwoTailDoubleProps } from './SquareWithTwoTailDouble';
+import { DualTailConfig, SquareWithIndependentTailsProps } from './SquareWithIndependentTails';
+
+type DraftTail = Partial<DualTailConfig>;
 
 export interface ShapeSidebarProps {
   isOpen: boolean;
@@ -67,10 +71,28 @@ export default function ShapeSidebar({
     } else if(type === "SquareWithTwoTailDouble") {
       const update = { ...(parsed as SquareWithTwoTailDoubleProps), [key]: value };
       updateConfiguration(serializeSquareWithTwoTailDoubleConfig(update));
+    } else if (type === "SquareWithIndependentTails") {
+      const updated = { ...(parsed as SquareWithIndependentTailsProps), [key]: value };
+      updateConfiguration(serializeSquareWithIndependentTailsConfig(updated));
     }
   };
 
-  const updateTailProp = (key: keyof TailConfig, value: any) => {
+  const updateTailProp = (key: keyof DualTailConfig, value: any, idx: 0 | 1 = 0) => {
+
+    if (type === 'SquareWithIndependentTails') {
+      const cur   = parsed as SquareWithIndependentTailsProps;
+      const tails: [DraftTail?, DraftTail?] = [...(cur.tails ?? [])];
+
+      tails[idx] = { ...(tails[idx] ?? {}), [key]: value };
+
+      updateConfiguration(
+        serializeSquareWithIndependentTailsConfig(
+          { ...cur, tails: tails as [DualTailConfig?, DualTailConfig?] } // ← cast once here
+        )
+      );
+      return;
+    }
+
     const current = parsed as SquareWithTailProps;
     const updated = {
       ...current,
@@ -79,6 +101,7 @@ export default function ShapeSidebar({
         [key]: value,
       },
     };
+
     if (type === "SquareWithTwoTail") {
       updateConfiguration(serializeSquareWithTwoTailConfig(updated));
     } 
@@ -100,6 +123,29 @@ export default function ShapeSidebar({
       },
     };
     updateConfiguration(serializeSquareWithMissingSideConfig(updated));
+  };
+
+  const updateIndependentSide = (
+    group: "lengths" | "sides",
+    side: "top" | "right" | "bottom" | "left",
+    value: number | boolean,
+  ) => {
+    if (type !== "SquareWithIndependentTails") return;
+
+    const config = parsed as SquareWithMissingSideProps;
+    const updated = {
+      ...config,
+      [group]: {
+        ...(config[group] ?? {}),
+        [side]: value,
+      },
+    };
+
+    if (type !== "SquareWithIndependentTails") updateConfiguration(serializeSquareWithMissingSideConfig(updated));
+
+    updateConfiguration(
+      serializeSquareWithIndependentTailsConfig(updated)
+    );
   };
 
   const sideKeys = ['top', 'right', 'bottom', 'left'] as const;
@@ -182,6 +228,115 @@ export default function ShapeSidebar({
               />
             </div>
           ))}
+        </div>
+      )}
+
+      {type === 'SquareWithIndependentTails' && (
+        <div className="mt-6 space-y-8">
+
+          {/* ── Per-side lengths ─────────────────────────────── */}
+          <h3 className="font-semibold text-lg mb-2">Side Lengths</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {(["top", "right", "bottom", "left"] as const).map(side => (
+              <label key={side} className="flex flex-col text-sm">
+                {side}
+                <input
+                  type="number"
+                  value={(parsed as SquareWithIndependentTailsProps).lengths?.[side] ?? ""}
+                  onChange={e =>
+                    updateIndependentSide(
+                      "lengths",
+                      side,
+                      parseFloat(e.target.value) || 0,
+                    )
+                  }
+                  className="border p-1 rounded text-sm"
+                />
+              </label>
+            ))}
+          </div>
+
+          {/* ── Side visibility ──────────────────────────────── */}
+          <h3 className="font-semibold text-lg mt-6 mb-2">Side Visibility</h3>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {(["top", "right", "bottom", "left"] as const).map(side => (
+              <label key={side} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={
+                    (parsed as SquareWithIndependentTailsProps).sides?.[side] ?? true
+                  }
+                  onChange={e =>
+                    updateIndependentSide("sides", side, e.target.checked)
+                  }
+                />
+                {side}
+              </label>
+            ))}
+          </div>
+
+          {[0, 1].map(i => {
+            const t = (parsed as SquareWithIndependentTailsProps).tails?.[i] ?? {};
+            return (
+              <div key={i}>
+                <h3 className="font-semibold text-lg mb-2">{`Tail #${i + 1}`}</h3>
+
+                {["corner", "side"].map(field => (
+                  <div key={field} className="mb-2">
+                    <label className="block mb-1 capitalize">{field}</label>
+                    <select
+                      value={(t as any)[field] ?? ""}
+                      onChange={e =>
+                        updateTailProp(field as keyof DualTailConfig, e.target.value, i as 0 | 1)
+                      }
+                      className="w-full border rounded p-1"
+                    >
+                      {(field === "corner"
+                        ? ["top-left", "top-right", "bottom-left", "bottom-right"]
+                        : ["top", "right", "bottom", "left"]
+                      ).map(opt => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+
+                {["length", "angle"].map(field => (
+                  <div key={field} className="mb-4">
+                    <label className="block mb-1 capitalize">{field}</label>
+                    <input
+                      type="number"
+                      value={(t as any)[field] ?? 0}
+                      onChange={e =>
+                        updateTailProp(
+                          field as keyof DualTailConfig,
+                          parseFloat(e.target.value),
+                          i as 0 | 1,
+                        )
+                      }
+                      className="w-full border rounded p-1 mb-1"
+                    />
+                    <input
+                      type="range"
+                      min={field === "angle" ? -180 : 0}
+                      max={field === "angle" ? 180 : 300}
+                      value={(t as any)[field] ?? 0}
+                      onChange={e =>
+                        updateTailProp(
+                          field as keyof DualTailConfig,
+                          parseFloat(e.target.value),
+                          i as 0 | 1,
+                        )
+                      }
+                      className="w-full"
+                    />
+                  </div>
+                ))}
+              </div>
+            );
+          })}
         </div>
       )}
 

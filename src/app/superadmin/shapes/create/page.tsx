@@ -9,13 +9,14 @@ import PrettySelect from "@/components/common/select/PrettySelect";
 import ShapeSidebar from "@/components/shape/ShapeSidebar";
 
 import { useShapeConfiguration } from "@/hooks/useShapeConfiguration";
-import { serializeConnectedLinesConfig, serializeLineConfig, serializeSquareConfig, serializeSquareWithMissingSideConfig, serializeSquareWithTwoTailConfig, serializeSquareWithTwoTailDoubleConfig } from "@/lib/serializer/serializeShapeConfig";
+import { serializeConnectedLinesConfig, serializeLineConfig, serializeSquareConfig, serializeSquareWithIndependentTailsConfig, serializeSquareWithMissingSideConfig, serializeSquareWithTwoTailConfig, serializeSquareWithTwoTailDoubleConfig } from "@/lib/serializer/serializeShapeConfig";
 import { defaultConfig as connectingDefaults } from "@/components/shape/ConnectingLines";
 import { defaultConfig as lineDefaults } from "@/components/shape/Line";
 import { defaultConfig as squareWithTailDefaults } from "@/components/shape/SquareWithTail";
 import { defaultConfig as squareWithTwoTailDefaults } from "@/components/shape/SquareWithTwoTail";
 import { defaultConfig as squareWithTwoTailDoubleDefaults } from "@/components/shape/SquareWithTwoTailDouble";
 import { defaultConfig as squareWithMissingSideDefaults } from "@/components/shape/SquareWithMissingSide";
+import { defaultConfig as independentTailDefaults } from "@/components/shape/SquareWithIndependentTails";
 
 export default function ShapeCreatorPage() {
   const { data: session, status } = useSession();
@@ -73,6 +74,10 @@ export default function ShapeCreatorPage() {
             {
               label: "Square with Missing Side",
               value: serializeSquareWithMissingSideConfig(squareWithMissingSideDefaults)
+            },
+            {
+              label: "Square – independent tails",
+              value: serializeSquareWithIndependentTailsConfig(independentTailDefaults)
             }
           ]}
         />

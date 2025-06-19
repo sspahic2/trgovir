@@ -6,9 +6,9 @@ export function useShapePickerSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [rowIndex, setRowIndex] = useState<number | null>(null);
   const [position, setPosition] = useState<string | null>(null);
-  const [ozn, setOzn] = useState<number | null>(null);
+  const [ozn, setOzn] = useState<string | null>(null);
 
-  const openForRow = (rowIndex: number, position: string, ozn: number) => {
+  const openForRow = (rowIndex: number, position: string, ozn: string) => {
     setRowIndex(rowIndex);
     setPosition(position);
     setOzn(ozn);
