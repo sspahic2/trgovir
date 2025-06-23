@@ -117,6 +117,7 @@ export default function Dashboard() {
             group.rows.map(row => ({
               ...row,
               position: group.position,
+              ozn: `${row.ozn}`
             }))
           )
       );

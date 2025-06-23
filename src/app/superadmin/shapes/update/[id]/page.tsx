@@ -69,8 +69,8 @@ export default function ShapeUpdatePage() {
           selectedCoords={outerCoords.concat(innerCoords)}
           onToggleCoord={toggleCoordinate}
           mode="edit"
-          width={300}
-          height={300}
+          width={400}
+          height={400}
         />
       </div>
 

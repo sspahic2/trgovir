@@ -29,7 +29,7 @@ export const TableRepository = {
     return prisma.tableRow.create({ data: {
       ...data,
       ozn: undefined,
-      ozn_text: data.ozn
+      ozn_text: "" + data.ozn
     } });
   },
   

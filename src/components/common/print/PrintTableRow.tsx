@@ -63,16 +63,20 @@ const PrintTableRow: React.FC<PrintTableRowProps> = ({
             onError={handleImg}
           />
         ) : (
+          <div
+            className="flex justify-center items-center cursor-pointer"
+          >
           <ShapeCanvas
             rawConfig={row.oblikIMere}
             mode="input"
-            width={100}
+            width={150}
             height={120}
             rowIndex={rowIdx}
             position={position}
             ozn={row.ozn}
             rowInputs={rowInputs}
           />
+          </div>
         )}
       </td>
 

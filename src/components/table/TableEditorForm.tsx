@@ -245,8 +245,8 @@ export default function TableEditorForm({
                                 <ShapeCanvas
                                   mode="input"
                                   onToggleCoord={() => {}}
-                                  width={200}
-                                  height={200}
+                                  width={320}
+                                  height={100}
                                   rowIndex={index}
                                   position={position}
                                   handleShapeKeyDown={handleShapeKeyDown}

@@ -64,6 +64,7 @@ export default function ShapeListPage() {
               height={300}
               onClick={() => router.push(`/superadmin/shapes/update/${shape.id}`)}
               onDelete={() => handleDelete(shape.id)}      // ← This prop makes the trash icon show
+              title={shape.title}
             />
           );
         })}
