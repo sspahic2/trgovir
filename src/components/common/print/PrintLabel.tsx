@@ -126,7 +126,7 @@ export default function PrintLabel({
         <div className="text-center text-xs font-bold" style={{ flex: '0 0 auto' }}>
           POS: <span className="underline">{row.position}</span>
         </div>
-        <div style={{ maxHeight: '3.5cm', minHeight: '2.5cm', flex: '0 0 auto' }}>{renderShape()}</div>
+        <div className="flex items-center" style={{ maxHeight: '3.5cm', minHeight: '2.5cm', flex: '0 0 auto' }}>{renderShape()}</div>
         <div
           className="text-xs text-center space-y-1 flex-col justify-center items-center flex"
           style={{ flex: '1 1 auto', maxHeight: '2.5cm' }}
